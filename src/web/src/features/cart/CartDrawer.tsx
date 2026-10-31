@@ -94,8 +94,10 @@ export function CartDrawer() {
               {quote.data && <Totals quote={quote.data} />}
               {!quote.data && quote.isPending && <p className="text-sm text-stone-500">{t('cart.updating')}</p>}
               <p className="mt-3 text-xs text-stone-500">{t('cart.pricesFromServer')}</p>
-              {/* "متابعة للطلب" (checkout) joins here in M7. */}
-              <Button className="mt-4 w-full" onClick={close} variant="secondary">
+              <ButtonLink className="mt-4 w-full" onClick={close} to="/checkout" variant="whatsapp">
+                {t('checkout.proceed')}
+              </ButtonLink>
+              <Button className="mt-2 w-full" onClick={close} variant="ghost">
                 {t('cart.continueShopping')}
               </Button>
             </footer>

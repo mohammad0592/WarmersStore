@@ -6,6 +6,7 @@ using Serilog.Formatting.Compact;
 using WarmersStore.Api.Common.Hosting;
 using WarmersStore.Api.Features;
 using WarmersStore.Api.Features.Health;
+using WarmersStore.Api.Features.Orders;
 using WarmersStore.Api.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -44,6 +45,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddAppRateLimiting(builder.Configuration);
+
+builder.Services.Configure<OrderRetentionOptions>(builder.Configuration.GetSection(OrderRetentionOptions.SectionName));
+if (builder.Configuration.GetValue($"{OrderRetentionOptions.SectionName}:CleanupEnabled", true))
+{
+    builder.Services.AddHostedService<OrderCleanupService>();
+}
 builder.Services.AddAppHealthChecks();
 builder.Services.AddOpenApi();
 

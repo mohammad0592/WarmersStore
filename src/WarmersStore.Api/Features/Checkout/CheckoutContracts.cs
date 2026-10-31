@@ -33,7 +33,15 @@ public sealed record CustomerRequest(
     string? DeliveryInstructions,
     string? Notes);
 
-public sealed record SubmitRequest(IReadOnlyList<CartLineRequest>? Lines, int? DeliveryAreaId, CustomerRequest? Customer);
+/// <param name="SubmissionId">
+/// Optional client-generated key for this checkout attempt. Resending the same key returns the
+/// order already created instead of creating another (double taps, flaky mobile networks).
+/// </param>
+public sealed record SubmitRequest(
+    IReadOnlyList<CartLineRequest>? Lines,
+    int? DeliveryAreaId,
+    CustomerRequest? Customer,
+    Guid? SubmissionId = null);
 
 // ---- Responses ----
 
@@ -77,5 +85,5 @@ public sealed record QuoteDto(
     IReadOnlyList<CheckoutError> Errors,
     bool IsValid);
 
-/// <param name="Reference">Order reference; null until order persistence is enabled.</param>
-public sealed record SubmitResultDto(string? Reference, QuoteDto Quote, string Message, string WhatsAppUrl);
+/// <param name="Reference">The saved order's reference (PendingConfirmation until an admin confirms it).</param>
+public sealed record SubmitResultDto(string Reference, QuoteDto Quote, string Message, string WhatsAppUrl);

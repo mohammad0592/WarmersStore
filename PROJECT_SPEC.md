@@ -162,7 +162,7 @@ Server-side authorization; Identity password hashing; backend price/rule validat
 
 | Decision | Blocks | Recommendation |
 |---|---|---|
-| Save orders (PendingConfirmation) or not | Checkout milestone | Yes, with a retention period |
+| ~~Save orders~~ | — | **Decided 2026-10-31: yes**, PendingConfirmation with a 90-day retention for unconfirmed/cancelled orders |
 | Selling unit per product (piece vs retail bag) | Builder/cart milestone | Configurable per product |
 | Delivery fee model (none / flat / per area) | Checkout milestone | Per area |
 | Price rounding (whole ₪ or agorot) | Pricing milestone | Store 2 decimals, display whole ₪ when exact |

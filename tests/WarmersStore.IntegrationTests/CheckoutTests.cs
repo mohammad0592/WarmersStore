@@ -164,7 +164,8 @@ public class CheckoutTests(ApiFixture fixture) : ApiTestBase(fixture)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = (await response.Content.ReadFromJsonAsync<SubmitResultDto>(ApiFixture.Json))!;
-        Assert.Null(result.Reference);
+        Assert.Matches(@"^DF-\d{6}-[2-9A-HJKMNP-Z]{4}$", result.Reference);
+        Assert.Contains($"رقم الطلب: {result.Reference}", result.Message);
         Assert.Equal(49m + 12m + 5m, result.Quote.Total);
         Assert.StartsWith("https://wa.me/970599000000?text=", result.WhatsAppUrl);
         Assert.Contains("*الاسم:* محمد أحمد", result.Message);

@@ -9,6 +9,8 @@ afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
   window.localStorage.clear()
+  window.sessionStorage.clear()
+  vi.restoreAllMocks()
   useCart.setState({ lines: [] })
   useCartUi.setState({ cartOpen: false, toast: null })
 })

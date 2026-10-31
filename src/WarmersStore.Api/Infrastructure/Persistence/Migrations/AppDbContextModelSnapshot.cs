@@ -369,6 +369,260 @@ namespace WarmersStore.Api.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WarmersStore.Api.Domain.Order", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("address");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<string>("CustomerWhatsApp")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("customer_whats_app");
+
+                    b.Property<int?>("DeliveryAreaId")
+                        .HasColumnType("integer")
+                        .HasColumnName("delivery_area_id");
+
+                    b.Property<string>("DeliveryAreaName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("delivery_area_name");
+
+                    b.Property<decimal>("DeliveryFee")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("delivery_fee");
+
+                    b.Property<string>("DeliveryInstructions")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("delivery_instructions");
+
+                    b.Property<string>("DeliveryMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("delivery_mode");
+
+                    b.Property<decimal>("DiscountTotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("discount_total");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("StatusChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("status_changed_at");
+
+                    b.Property<Guid?>("SubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submission_id");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("total");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("WhatsAppMessage")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("whats_app_message");
+
+                    b.HasKey("Id")
+                        .HasName("pk_orders");
+
+                    b.HasIndex("Reference")
+                        .IsUnique()
+                        .HasDatabaseName("ix_orders_reference");
+
+                    b.HasIndex("SubmissionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_orders_submission_id")
+                        .HasFilter("submission_id IS NOT NULL");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_orders_status_created_at");
+
+                    b.HasIndex("Status", "StatusChangedAt")
+                        .HasDatabaseName("ix_orders_status_status_changed_at");
+
+                    b.ToTable("orders", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_orders_amounts_non_negative", "subtotal >= 0 AND discount_total >= 0 AND delivery_fee >= 0 AND total >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("WarmersStore.Api.Domain.OrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("discount");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("line_total");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_id");
+
+                    b.Property<int?>("PackageId")
+                        .HasColumnType("integer")
+                        .HasColumnName("package_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal?>("UnitPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_order_item");
+
+                    b.HasIndex("OrderId", "Position")
+                        .HasDatabaseName("ix_order_item_order_id_position");
+
+                    b.ToTable("order_item", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_order_items_quantity_positive", "quantity > 0");
+                        });
+                });
+
+            modelBuilder.Entity("WarmersStore.Api.Domain.OrderItemProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<int>("Pieces")
+                        .HasColumnType("integer")
+                        .HasColumnName("pieces");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("product_name");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<decimal?>("Subtotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal?>("UnitPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_order_item_product");
+
+                    b.HasIndex("OrderItemId")
+                        .HasDatabaseName("ix_order_item_product_order_item_id");
+
+                    b.ToTable("order_item_product", (string)null);
+                });
+
             modelBuilder.Entity("WarmersStore.Api.Domain.PackageItem", b =>
                 {
                     b.Property<int>("PackageId")
@@ -819,6 +1073,26 @@ namespace WarmersStore.Api.Infrastructure.Persistence.Migrations
                     b.Navigation("City");
                 });
 
+            modelBuilder.Entity("WarmersStore.Api.Domain.OrderItem", b =>
+                {
+                    b.HasOne("WarmersStore.Api.Domain.Order", null)
+                        .WithMany("Items")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_order_item_orders_order_id");
+                });
+
+            modelBuilder.Entity("WarmersStore.Api.Domain.OrderItemProduct", b =>
+                {
+                    b.HasOne("WarmersStore.Api.Domain.OrderItem", null)
+                        .WithMany("Products")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_order_item_product_order_item_order_item_id");
+                });
+
             modelBuilder.Entity("WarmersStore.Api.Domain.PackageItem", b =>
                 {
                     b.HasOne("WarmersStore.Api.Domain.ReadyMadePackage", null)
@@ -863,6 +1137,16 @@ namespace WarmersStore.Api.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("WarmersStore.Api.Domain.City", b =>
                 {
                     b.Navigation("Distributors");
+                });
+
+            modelBuilder.Entity("WarmersStore.Api.Domain.Order", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("WarmersStore.Api.Domain.OrderItem", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("WarmersStore.Api.Domain.Product", b =>

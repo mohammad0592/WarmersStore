@@ -115,6 +115,22 @@ export interface Quote {
   isValid: boolean
 }
 
+/** Delivery for online orders; areas are only listed in PerArea mode. */
+export interface DeliveryOptions {
+  mode: DeliveryMode
+  flatFee: number | null
+  freeDeliveryThreshold: number | null
+  message: string | null
+  areas: { id: number; name: string; fee: number; freeDeliveryThreshold: number | null; note: string | null }[]
+}
+
+export interface SubmitResult {
+  reference: string
+  quote: Quote
+  message: string
+  whatsAppUrl: string
+}
+
 /** A city a customer can pick on /distributors: active, with at least one active distributor. */
 export interface City {
   id: number

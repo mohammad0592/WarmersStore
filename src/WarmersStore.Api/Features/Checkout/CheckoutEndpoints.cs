@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WarmersStore.Api.Common.Hosting;
+using WarmersStore.Api.Features.Orders;
 using WarmersStore.Api.Infrastructure.Persistence;
 
 namespace WarmersStore.Api.Features.Checkout;
@@ -31,7 +32,8 @@ public static class CheckoutEndpoints
         })
         .RequireRateLimiting(RateLimiting.QuotePolicy);
 
-        checkout.MapPost("/submit", async Task<IResult> (SubmitRequest request, AppDbContext db, CancellationToken ct) =>
+        checkout.MapPost("/submit", async Task<IResult> (
+            SubmitRequest request, AppDbContext db, TimeProvider clock, CancellationToken ct) =>
         {
             var errors = CheckoutRequestValidator.ValidateCart(request.Lines);
             var (customer, customerErrors) = CheckoutRequestValidator.ValidateCustomer(request.Customer);
@@ -57,12 +59,17 @@ public static class CheckoutEndpoints
                 return TypedResults.UnprocessableEntity(quote);
             }
 
-            var message = WhatsAppMessageBuilder.Build(context.Store.StoreName, quote, customer!, reference: null);
+            // Saved before the customer is sent to WhatsApp, as PendingConfirmation: opening
+            // WhatsApp doesn't prove the message was sent, so an admin confirms it later.
+            var order = await OrderSubmission.FindExistingAsync(db, request.SubmissionId, ct)
+                ?? await OrderSubmission.SaveAsync(
+                    db, quote, customer!, context.Store.StoreName, request.SubmissionId, clock, ct);
+
             return TypedResults.Ok(new SubmitResultDto(
-                Reference: null,
+                order.Reference,
                 quote,
-                message,
-                WhatsAppMessageBuilder.Link(context.Store.WhatsAppNumber!, message)));
+                order.Message,
+                WhatsAppMessageBuilder.Link(context.Store.WhatsAppNumber!, order.Message)));
         })
         .RequireRateLimiting(RateLimiting.SubmitPolicy);
 

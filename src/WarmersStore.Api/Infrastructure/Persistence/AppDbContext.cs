@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, TimeProvider t
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();
     public DbSet<City> Cities => Set<City>();
     public DbSet<Distributor> Distributors => Set<Distributor>();
+    public DbSet<Order> Orders => Set<Order>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -26,6 +27,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, TimeProvider t
         configurationBuilder.Properties<SellingUnit>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<DiscountType>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<DeliveryMode>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<OrderStatus>().HaveConversion<string>().HaveMaxLength(30);
+        configurationBuilder.Properties<OrderItemKind>().HaveConversion<string>().HaveMaxLength(20);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>

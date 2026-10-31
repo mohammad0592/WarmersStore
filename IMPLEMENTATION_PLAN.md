@@ -185,7 +185,7 @@ Each milestone is small, testable and demoable.
 | M4 ✅ | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
 | **M5 ✅** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
 | M6 ✅ | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
-| M7 | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
+| M7 ✅ | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
 | M8 | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
 | M9 | Admin products (with images) and packages | |
 | **M10** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
@@ -267,3 +267,15 @@ Decisions taken while building that refine the plan above:
   - Delivery reads "يتم تأكيده عند التواصل" (mode None), "حسب منطقة التوصيل" (per-area, no area chosen yet), "مجاني" or the fee.
   - The checkout button joins in M7.
 - **M6, hash links:** `/packages#custom` (home, footer, drawer "تعديل") now scrolls to the builder after client-side navigation.
+- **M7, orders (decided: save orders):**
+  - `submit` saves a **PendingConfirmation** order before sending the customer to WhatsApp. Statuses are PendingConfirmation → Confirmed / Cancelled → Completed; nothing moves automatically. The brief's *Draft* status isn't used, because an order only exists once the customer presses send.
+  - Each order is a full snapshot: customer details, delivery mode/area, totals, each line, the products in each line with names and prices, and the exact WhatsApp text the customer was handed. Order lines aren't foreign keys to products or packages, so catalog edits and deletions never change past orders.
+- **M7, references:** `DF-YYMMDD-XXXX` (UTC date plus 4 characters from an alphabet without 0/O/1/I/L), with a unique index and retry on collision.
+- **M7, idempotency:** the checkout page sends a `submissionId` (one per visit). Resubmitting with it returns the existing order instead of creating a second one, including when two requests race.
+- **M7, retention:** a background service deletes PendingConfirmation and Cancelled orders 90 days after their last status change (`Orders__UnconfirmedRetentionDays`). Confirmed and Completed orders are kept as business records.
+- **M7, checkout page (`/checkout`):**
+  - It's a page rather than the design's modal, using the design's form and summary layout.
+  - The phone field has a country selector (+970 default, +972, other). "0599 123 456" becomes `+970599123456`, and a full `+…` or `00…` number is accepted with any selector.
+  - In per-area mode a delivery area is required, and the summary re-quotes with it.
+  - Server field errors (400) map onto the fields; business-rule failures (422) appear in the summary; the button is disabled until a store WhatsApp number is set.
+- **M7, after sending:** the cart is cleared, the reference and wa.me link are kept in `sessionStorage`, and the browser goes to `/checkout/sent` and then WhatsApp via `location.assign` (mobile browsers block `window.open` after a request). The sent page repeats that the order counts only once it's sent in WhatsApp, and can reopen WhatsApp. Only `https://wa.me/` links are accepted from storage.

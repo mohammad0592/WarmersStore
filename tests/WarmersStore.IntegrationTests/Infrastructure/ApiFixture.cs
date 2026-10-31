@@ -50,6 +50,7 @@ public sealed class ApiFixture : IAsyncLifetime
             // Tests share one client address; rate limits get their own test with low limits.
             builder.UseSetting("RateLimiting:QuotePerMinute", "100000");
             builder.UseSetting("RateLimiting:SubmitPerMinute", "100000");
+            builder.UseSetting("Orders:CleanupEnabled", "false");
         });
 
         Client = _factory.CreateClient();
@@ -98,7 +99,7 @@ public sealed class ApiFixture : IAsyncLifetime
     public Task ResetDatabaseAsync() => WithDbAsync(async db =>
     {
         await db.Database.ExecuteSqlRawAsync("""
-            TRUNCATE distributors, cities, package_items, packages, product_images, product_custom_rules,
+            TRUNCATE orders, distributors, cities, package_items, packages, product_images, product_custom_rules,
                      custom_discount_tiers, delivery_areas, products,
                      custom_package_settings, delivery_settings, store_settings
             RESTART IDENTITY CASCADE
