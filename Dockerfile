@@ -31,9 +31,10 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
 COPY --from=api /app/publish ./
 COPY --from=web /web/dist ./wwwroot
 # Uploaded images live here; mount a volume at /data/media so they survive redeploys.
-# Owned by the app user so the non-root process can write to it.
-RUN mkdir -p /data/media && chown $APP_UID /data/media
-# Non-root user provided by the .NET base image.
-USER $APP_UID
+RUN mkdir -p /data/media && chown $APP_UID:$APP_UID /data/media
+# The container starts as root only so the entrypoint can give a freshly mounted (root-owned)
+# volume to the app user; it then runs the app as that non-root user ($APP_UID from the base image).
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "WarmersStore.Api.dll"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["dotnet", "WarmersStore.Api.dll"]

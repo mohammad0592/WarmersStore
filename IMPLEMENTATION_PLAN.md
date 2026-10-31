@@ -303,7 +303,8 @@ Decisions taken while building that refine the plan above:
   - **SkiaSharp** (MIT) instead of ImageSharp: v4 needs a license key for Release builds, and 3.1.x has unpatched high-severity advisories.
   - Uploads are validated by content, limited in size and pixel count, oriented from EXIF (all 8 orientations unit-tested), resized to ≤1600 px, re-encoded to WebP without metadata, and stored under random keys behind `IImageStorage` (local disk now, S3/R2 later).
   - Served from `/media` with an immutable cache. Old files are deleted on replace or delete.
-  - Docker uses `/data/media`, owned by the app user, with a compose `media` volume. On Railway, attach a Volume and possibly set `RAILWAY_RUN_UID=0` (M12).
+  - Docker uses `/data/media`, owned by the app user, with a compose `media` volume. On Railway, attach a Volume at `/data/media`.
+  - (Done before M12) Railway mounts volumes owned by root. `docker-entrypoint.sh` starts as root, gives the media folder (and anything root wrote there) to the app user, then drops to that user with `setpriv` (no capabilities). The app never runs as root, and `RAILWAY_RUN_UID` isn't needed.
 - **M9, product details:** changed from a page to the design's modal at `/products/:slug`, nested over the catalog. It's shareable, closes with Back or Escape, and is a bottom sheet on phones.
 - **M9, dev and ops fixes:**
   - Vite now proxies `/media`. Requests the browser abandons are logged as 499 at info level, not as 500 errors.

@@ -184,8 +184,8 @@ Processing uses **SkiaSharp** (MIT licence). ImageSharp was rejected for two rea
 Where files are stored:
 
 - **Local development:** `src/WarmersStore.Api/data/media` (git-ignored). Vite proxies `/media` to the API.
-- **Docker:** `/data/media` (`Media__Root`), owned by the non-root app user. Mount a volume there.
-- **Railway:** attach a Volume at `/data/media`. Railway mounts volumes as root, so if uploads fail with permission errors, set `RAILWAY_RUN_UID=0` on the service. This is covered in the M12 deployment checklist.
+- **Docker:** `/data/media` (`Media__Root`). Mount a volume there.
+- **Railway:** attach a Volume at `/data/media`. No `RAILWAY_RUN_UID` is needed: the container starts as root only so `docker-entrypoint.sh` can hand the (root-owned) volume to the app user, then runs the app as that non-root user with no extra privileges.
 
 ## Configuration
 
