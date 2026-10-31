@@ -17,7 +17,8 @@ internal sealed class CustomPackageSettingsConfiguration : IEntityTypeConfigurat
                 "min_items IS NULL OR max_items IS NULL OR min_items <= max_items");
             t.HasCheckConstraint("ck_custom_package_settings_limits_positive",
                 "(min_items IS NULL OR min_items > 0) AND (max_items IS NULL OR max_items > 0) "
-                + "AND (min_subtotal IS NULL OR min_subtotal >= 0)");
+                + "AND (min_subtotal IS NULL OR min_subtotal >= 0) "
+                + "AND (max_quantity_per_product IS NULL OR max_quantity_per_product > 0)");
         });
     }
 }

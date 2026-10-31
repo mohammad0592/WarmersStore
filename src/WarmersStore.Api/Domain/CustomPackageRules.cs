@@ -10,6 +10,10 @@ public class CustomPackageSettings
     public int? MinItems { get; set; }
     public int? MaxItems { get; set; }
     public decimal? MinSubtotal { get; set; }
+
+    /// <summary>Upper limit for any single product in a custom package; per-product rules can be stricter.</summary>
+    public int? MaxQuantityPerProduct { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

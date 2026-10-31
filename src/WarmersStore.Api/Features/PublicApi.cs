@@ -1,4 +1,5 @@
 using WarmersStore.Api.Features.Catalog;
+using WarmersStore.Api.Features.Checkout;
 using WarmersStore.Api.Features.CustomPackages;
 using WarmersStore.Api.Features.Delivery;
 using WarmersStore.Api.Features.Distributors;
@@ -22,6 +23,7 @@ public static class PublicApi
         api.MapDeliveryEndpoints();
         api.MapStoreSettingsEndpoints();
         api.MapDistributorEndpoints();
+        api.MapCheckoutEndpoints();
 
         return app;
     }

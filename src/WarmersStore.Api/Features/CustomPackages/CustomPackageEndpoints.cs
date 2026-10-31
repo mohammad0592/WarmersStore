@@ -14,6 +14,7 @@ public sealed record CustomPackageRulesDto(
     int? MinItems,
     int? MaxItems,
     decimal? MinSubtotal,
+    int? MaxQuantityPerProduct,
     IReadOnlyList<ProductRuleDto> ProductRules,
     IReadOnlyList<DiscountTierDto> DiscountTiers);
 
@@ -38,7 +39,8 @@ public static class CustomPackageEndpoints
                 .ToListAsync(ct);
 
             return TypedResults.Ok(new CustomPackageRulesDto(
-                settings.IsEnabled, settings.MinItems, settings.MaxItems, settings.MinSubtotal, productRules, tiers));
+                settings.IsEnabled, settings.MinItems, settings.MaxItems, settings.MinSubtotal,
+                settings.MaxQuantityPerProduct, productRules, tiers));
         })
         .WithTags("Custom packages");
 

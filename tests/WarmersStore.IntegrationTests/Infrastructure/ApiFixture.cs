@@ -47,6 +47,9 @@ public sealed class ApiFixture : IAsyncLifetime
             builder.UseSetting("Database:MigrateOnStartup", "true");
             builder.UseSetting("Database:SeedEssentialData", "true");
             builder.UseSetting("Database:SeedSampleData", "false");
+            // Tests share one client address; rate limits get their own test with low limits.
+            builder.UseSetting("RateLimiting:QuotePerMinute", "100000");
+            builder.UseSetting("RateLimiting:SubmitPerMinute", "100000");
         });
 
         Client = _factory.CreateClient();
@@ -54,9 +57,32 @@ public sealed class ApiFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        foreach (var derived in _derivedFactories)
+        {
+            await derived.DisposeAsync();
+        }
         await _factory.DisposeAsync();
         await _postgres.DisposeAsync();
     }
+
+    private readonly List<WebApplicationFactory<Program>> _derivedFactories = [];
+
+    /// <summary>A separate app instance on the same database, with extra settings applied.</summary>
+    public HttpClient CreateClientWithSettings(params (string Key, string Value)[] settings)
+    {
+        var derived = _factory.WithWebHostBuilder(builder =>
+        {
+            foreach (var (key, value) in settings)
+            {
+                builder.UseSetting(key, value);
+            }
+        });
+        _derivedFactories.Add(derived);
+        return derived.CreateClient();
+    }
+
+    public Task<HttpResponseMessage> PostJsonAsync<T>(string url, T body) =>
+        Client.PostAsJsonAsync(url, body, Json);
 
     public Task<T> GetJsonAsync<T>(string url) =>
         Client.GetFromJsonAsync<T>(url, Json)!;

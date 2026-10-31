@@ -43,6 +43,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddProblemDetails();
+builder.Services.AddAppRateLimiting(builder.Configuration);
 builder.Services.AddAppHealthChecks();
 builder.Services.AddOpenApi();
 
@@ -57,7 +58,13 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 
 app.UseForwardedHeaders();
-app.UseExceptionHandler();
+// Bad requests (e.g. malformed JSON) keep their 4xx status; Development rethrows them by default.
+app.UseExceptionHandler(new ExceptionHandlerOptions
+{
+    StatusCodeSelector = ex => ex is BadHttpRequestException badRequest
+        ? badRequest.StatusCode
+        : StatusCodes.Status500InternalServerError,
+});
 app.UseStatusCodePages();
 
 if (!app.Environment.IsDevelopment())
@@ -75,6 +82,7 @@ app.UseSerilogRequestLogging(options =>
 });
 
 app.UseSpaStaticFiles();
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {

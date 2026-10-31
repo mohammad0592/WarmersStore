@@ -131,6 +131,10 @@ namespace WarmersStore.Api.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("max_items");
 
+                    b.Property<int?>("MaxQuantityPerProduct")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_quantity_per_product");
+
                     b.Property<int?>("MinItems")
                         .HasColumnType("integer")
                         .HasColumnName("min_items");
@@ -151,7 +155,7 @@ namespace WarmersStore.Api.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_custom_package_settings_item_range", "min_items IS NULL OR max_items IS NULL OR min_items <= max_items");
 
-                            t.HasCheckConstraint("ck_custom_package_settings_limits_positive", "(min_items IS NULL OR min_items > 0) AND (max_items IS NULL OR max_items > 0) AND (min_subtotal IS NULL OR min_subtotal >= 0)");
+                            t.HasCheckConstraint("ck_custom_package_settings_limits_positive", "(min_items IS NULL OR min_items > 0) AND (max_items IS NULL OR max_items > 0) AND (min_subtotal IS NULL OR min_subtotal >= 0) AND (max_quantity_per_product IS NULL OR max_quantity_per_product > 0)");
 
                             t.HasCheckConstraint("ck_custom_package_settings_singleton", "id = 1");
                         });

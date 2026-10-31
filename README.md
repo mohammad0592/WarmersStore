@@ -104,6 +104,21 @@ docker compose down -v
 | `GET /api/store-settings` | Public store settings only |
 | `GET /api/cities` | Active cities that have active distributors, with counts |
 | `GET /api/distributors?cityId=`, `GET /api/distributors/{id}` | Active distributors in active cities, with a Google Maps link |
+| `POST /api/checkout/quote` | Prices a cart from the database and reports rule problems per line (no personal data) |
+| `POST /api/checkout/submit` | Validates cart and customer, returns the Arabic WhatsApp message and the `wa.me` link |
+
+Checkout responses:
+
+| Status | Meaning |
+|---|---|
+| `200` | Priced. For `submit`, the cart is valid and the WhatsApp link is ready |
+| `400` | Malformed request: field-keyed `ValidationProblemDetails`, including customer details |
+| `422` | Valid request but a business rule failed. The body is the quote; each error has a `code`, Arabic `message` and `params` |
+| `429` | Rate limited per client IP |
+
+The cart sends only ids and quantities; prices sent by a client are ignored. Opening WhatsApp doesn't mean the order was sent, so nothing is marked confirmed.
+
+Submitting needs the store's WhatsApp number (`store_settings.whats_app_number`), which the admin sets in M11. Until then, `submit` returns `422 ordering_unavailable`.
 
 ## Tests
 
@@ -144,6 +159,8 @@ All production configuration comes from environment variables; nothing secret is
 | `Database__MigrateOnStartup` | `true` in Development; leave `false` in production (the pre-deploy step migrates) |
 | `Database__SeedEssentialData` | Default `true`: settings rows plus the inactive initial catalog, inserted only if missing |
 | `Database__SeedSampleData` | `true` in Development; ignored in Production |
+| `RateLimiting__QuotePerMinute` | Quote requests per client IP per minute (default 60) |
+| `RateLimiting__SubmitPerMinute` | Submit requests per client IP per minute (default 10) |
 
 The app refuses to start if no database is configured.
 

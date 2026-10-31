@@ -56,7 +56,7 @@ ReadyMadePackage (table "packages")  Id, Slug, Name, Description, ImageKey?, Pri
                     DisplayOrder, DeletedAt? (soft delete), CreatedAt, UpdatedAt
 PackageItem         PK(PackageId, ProductId), Quantity > 0; FK Product = Restrict
 
-CustomPackageSettings (single row)  IsEnabled, MinItems?, MaxItems?, MinSubtotal?
+CustomPackageSettings (single row)  IsEnabled, MinItems?, MaxItems?, MinSubtotal?, MaxQuantityPerProduct?
 ProductCustomRule   ProductId PK → Product, MinQty?, MaxQty?
 CustomDiscountTier  Id, MinItems, Type (Percent | Fixed), Value, IsActive
 
@@ -180,7 +180,7 @@ Each milestone is small, testable and demoable.
 |---|---|---|
 | M0 ✅ | Repo, solution, Vite app, compose Postgres, `/health`, SPA served by API, Dockerfile | `docker build` and run locally serve the SPA and `/health` |
 | M1 ✅ | Entities and migrations (**incl. City, Distributor**), development-only placeholder seed (distributors marked "(بيانات تجريبية)"), public GET APIs (**incl. `/api/cities`, `/api/distributors`**) | Integration tests: only active items returned; city filter works; inactive distributor → 404 |
-| M2 | Pricing engine, rule validator, quote and submit endpoints, WhatsApp message builder | Unit tests for every rule and for rounding; tampered-cart tests |
+| M2 ✅ | Pricing engine, rule validator, quote and submit endpoints, WhatsApp message builder | Unit tests for every rule and for rounding; tampered-cart tests |
 | M3 | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
 | M4 | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
 | **M5** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
@@ -204,3 +204,24 @@ Decisions taken while building that refine the plan above:
 - **M1, package availability:** a package that contains an inactive product is still listed, with `isAvailable: false`. `regularPrice` (the contents bought individually) is null when any content is unpriced.
 - **M1, cities:** `/api/cities` lists only cities a customer can pick, meaning active cities with at least one active distributor.
 - **M1, local Postgres:** compose publishes on host port 5433 to avoid clashing with a natively installed PostgreSQL.
+- **M2, store-wide max per product:** `CustomPackageSettings.MaxQuantityPerProduct` was added (the brief lists it among the custom-package settings). When a per-product rule also exists, the stricter limit applies.
+- **M2, rule semantics:**
+  - Custom-package limits apply **per custom package**, not across the cart.
+  - Items are counted in selling units.
+  - `MinSubtotal` is compared **before** the package's discount.
+  - The store-wide `MinOrderTotal` is compared with the cart subtotal **after** discounts and before delivery.
+- **M2, discounts:**
+  - The tier with the highest reached `MinItems` applies, to custom packages only.
+  - Percentages round to the nearest agora, half away from zero.
+  - A discount never exceeds the package subtotal.
+- **M2, delivery:**
+  - Per-area mode: a quote without an area returns `fee: null`; submitting without one is an error. An area's own free-delivery threshold overrides the global one.
+  - `None` mode charges nothing, and the message says delivery is "confirmed when we contact you".
+- **M2, error contract:**
+  - Malformed requests (shapes the UI can't produce) → 400.
+  - Business-rule failures → 200 on quote, or 422 on submit, with the quote and per-line `{code, message, params}`.
+  - Missing store WhatsApp number → 422 `ordering_unavailable`.
+- **M2, customer input:**
+  - Phone numbers are normalized to E.164: spaces, dashes, a leading `00` and Arabic-Indic digits are accepted.
+  - Control characters are removed, and line breaks are kept only in the notes and delivery instructions.
+- **M2, no order persistence yet:** `submit` returns `reference: null`, and the message has no reference line until saved orders are decided (M7).
