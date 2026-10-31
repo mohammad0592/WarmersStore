@@ -5,7 +5,7 @@ import { renderApp } from '@/test/renderApp'
 
 describe('routes', () => {
   beforeEach(() => {
-    mockApi({ '/api/products': [], '/api/packages': [] })
+    mockApi({ '/api/products': [], '/api/packages': [], '/api/cities': [], '/api/distributors': [] })
   })
 
   it('renders the Arabic home page', () => {

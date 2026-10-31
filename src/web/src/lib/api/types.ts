@@ -55,6 +55,26 @@ export interface ReadyMadePackage {
   items: PackageItem[]
 }
 
+/** A city a customer can pick on /distributors: active, with at least one active distributor. */
+export interface City {
+  id: number
+  slug: string
+  name: string
+  distributorCount: number
+}
+
+/** An authorized physical shop. Purchases happen in the shop only; there is no delivery. */
+export interface Distributor {
+  id: number
+  name: string
+  city: { id: number; slug: string; name: string }
+  address: string
+  phone: string | null
+  /** Google Maps link built by the server (from coordinates or the admin's validated URL). */
+  mapUrl: string | null
+  imageUrl: string | null
+}
+
 export interface SocialLinks {
   facebook: string | null
   instagram: string | null

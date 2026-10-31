@@ -183,7 +183,7 @@ Each milestone is small, testable and demoable.
 | M2 ✅ | Pricing engine, rule validator, quote and submit endpoints, WhatsApp message builder | Unit tests for every rule and for rounding; tampered-cart tests |
 | M3 ✅ | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
 | M4 ✅ | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
-| **M5** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
+| **M5 ✅** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
 | M6 | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
 | M7 | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
 | M8 | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
@@ -241,3 +241,15 @@ Decisions taken while building that refine the plan above:
   - The products and packages sections hide when empty.
   - "وين بتلاقينا؟" shows the two ways to buy as separate cards, only while `showDistributors` is on.
   - The design's safety bullets in the trust panel were replaced with non-claims (cash on delivery, no account needed). The WhatsApp panel appears only once a number is configured.
+- **M5, distributors page:**
+  - All visible distributors are loaded once and filtered on the client by `?city=<slug>` (the data is small). The city chips come from `/api/cities`, so only cities with active shops are offered.
+  - Distributors are grouped under city headings.
+  - Your intro text and the in-store-only notice appear word for word, with the notice always visible above the list.
+- **M5, cards:**
+  - The primary action is "عرض الموقع على الخريطة", which opens Google Maps in a new tab. The phone is a `tel:` link.
+  - A card without a map link says so instead of showing a dead button.
+  - As a second line of defence, the frontend renders only `https:` map links.
+- **M5, empty states:**
+  - No distributors at all: "coming soon", with a link to order online.
+  - Unknown city or no shops in it: a link back to all cities and one to order online. These are the page's only links into online ordering; there are no cart, order or delivery buttons.
+- **M5, isolation:** an `oxlint` `no-restricted-imports` override stops `src/features/distributors/**` from importing cart, checkout, packages or builder code.

@@ -10,6 +10,19 @@ export function whatsAppChatUrl(number: string | null | undefined): string | nul
   return digits ? `https://wa.me/${digits}` : null
 }
 
+/**
+ * Returns the URL only if it is an absolute https link. A second line of defence for links that
+ * come from admin-entered data (the API validates them too), so a `javascript:` URL never renders.
+ */
+export function safeExternalUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    return new URL(url).protocol === 'https:' ? url : null
+  } catch {
+    return null
+  }
+}
+
 /** Arabic count of individual warmers: "قطعة واحدة", "قطعتان", "6 قطع", "12 قطعة". */
 export function formatPieces(count: number): string {
   if (count === 1) return 'قطعة واحدة'

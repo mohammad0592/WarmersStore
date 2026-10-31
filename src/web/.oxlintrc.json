@@ -4,5 +4,23 @@
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/features/distributors/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/features/cart/*", "@/features/checkout/*", "@/features/packages/*", "@/features/builder/*"],
+                "message": "Distributors are in-store only: the distributors feature must not use cart, checkout or package ordering code."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

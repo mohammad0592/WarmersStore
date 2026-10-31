@@ -1,4 +1,24 @@
-import type { Product, ReadyMadePackage } from '@/lib/api/types'
+import type { City, Distributor, Product, ReadyMadePackage } from '@/lib/api/types'
+
+export const nablus = { id: 1, slug: 'nablus', name: 'نابلس' }
+export const hebron = { id: 3, slug: 'hebron', name: 'الخليل' }
+
+export function city(base: { id: number; slug: string; name: string }, distributorCount: number): City {
+  return { ...base, distributorCount }
+}
+
+export function distributor(overrides: Partial<Distributor> = {}): Distributor {
+  return {
+    id: 1,
+    name: 'محل تجريبي',
+    city: nablus,
+    address: 'شارع تجريبي',
+    phone: null,
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=32.2215,35.2544',
+    imageUrl: null,
+    ...overrides,
+  }
+}
 
 export function product(overrides: Partial<Product> = {}): Product {
   return {

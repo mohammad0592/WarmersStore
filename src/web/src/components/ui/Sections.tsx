@@ -38,8 +38,18 @@ export function EmptyState({ text, icon = 'package', children }: { text: string;
   )
 }
 
-/** Image with the design's warm placeholder (flame on light orange) when there is no photo yet. */
-export function MediaImage({ src, alt, className = '' }: { src: string | null | undefined; alt: string; className?: string }) {
+/** Image with the design's warm placeholder (an icon on light orange) when there is no photo yet. */
+export function MediaImage({
+  src,
+  alt,
+  className = '',
+  fallbackIcon = 'flame',
+}: {
+  src: string | null | undefined
+  alt: string
+  className?: string
+  fallbackIcon?: IconName
+}) {
   return (
     <div className={`relative overflow-hidden bg-orange-50 ${className}`}>
       {src ? (
@@ -52,7 +62,7 @@ export function MediaImage({ src, alt, className = '' }: { src: string | null | 
         />
       ) : (
         <div className="grid h-full place-items-center text-orange-300">
-          <Icon className="size-14" name="flame" />
+          <Icon className="size-14" name={fallbackIcon} />
         </div>
       )}
     </div>
