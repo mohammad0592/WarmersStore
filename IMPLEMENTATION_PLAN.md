@@ -182,7 +182,7 @@ Each milestone is small, testable and demoable.
 | M1 ✅ | Entities and migrations (**incl. City, Distributor**), development-only placeholder seed (distributors marked "(بيانات تجريبية)"), public GET APIs (**incl. `/api/cities`, `/api/distributors`**) | Integration tests: only active items returned; city filter works; inactive distributor → 404 |
 | M2 ✅ | Pricing engine, rule validator, quote and submit endpoints, WhatsApp message builder | Unit tests for every rule and for rounding; tampered-cart tests |
 | M3 ✅ | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
-| M4 | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
+| M4 ✅ | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
 | **M5** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
 | M6 | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
 | M7 | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
@@ -230,3 +230,14 @@ Decisions taken while building that refine the plan above:
 - **M3, navigation:** "موزعونا المعتمدون" appears in the header, mobile menu and footer only when `showDistributors` is on, though `/distributors` stays reachable directly. Products, packages and distributors show "coming soon" placeholders until M4/M5.
 - **M3, cart button:** the design's header cart button is added in M6 together with the cart, so the site never shows a button that does nothing.
 - **M3, font:** Cairo is self-hosted (`@fontsource-variable/cairo`) instead of the export's Google Fonts import. That avoids a third-party request and keeps a future Content-Security-Policy simple.
+- **M4, product details:** a real page at `/products/:slug` (shareable, with a browser tab title) rather than the export's modal. Unknown specs are left out instead of guessed. Usage and safety sections appear only once that text exists. Durations read as "8–10 ساعات تقريباً", following the brief's "approximately".
+- **M4, product cards:** they add size and bag contents to the design's duration and adhesive chips, as the brief requires. No prices are shown in the catalog; the sales flow leads to `/packages`.
+- **M4, package cards:**
+  - A savings badge ("وفّر X ₪") shows when the package is cheaper than its contents bought separately. Otherwise a "باقة مميّزة" chip shows for featured packages.
+  - Unavailable packages stay listed, dimmed and labelled.
+  - Quantity and add-to-cart controls arrive in M6.
+- **M4, home:**
+  - Featured packages are shown, or the first three if none are featured.
+  - The products and packages sections hide when empty.
+  - "وين بتلاقينا؟" shows the two ways to buy as separate cards, only while `showDistributors` is on.
+  - The design's safety bullets in the trust panel were replaced with non-claims (cash on delivery, no account needed). The WhatsApp panel appears only once a number is configured.

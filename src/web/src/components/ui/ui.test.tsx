@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
-import { formatMoney, whatsAppChatUrl } from '@/lib/format'
+import { formatDimensions, formatHours, formatMoney, formatPieces, whatsAppChatUrl } from '@/lib/format'
 import { QuantityStepper } from './QuantityStepper'
 
 function Stepper({ min, max }: { min: number; max: number }) {
@@ -32,6 +32,22 @@ describe('format', () => {
     [0, '0 ₪'],
   ])('formats %s as %s', (amount, expected) => {
     expect(formatMoney(amount)).toBe(expected)
+  })
+
+  it.each([
+    [8, 10, '8–10 ساعات'],
+    [3, 4, '3–4 ساعات'],
+    [7.5, 8, '7.5–8 ساعات'],
+    [12, 12, '12 ساعة'],
+    [null, 4, '4 ساعات'],
+  ])('formats %s–%s hours', (min, max, expected) => {
+    expect(formatHours(min, max)).toBe(expected)
+  })
+
+  it('formats pieces and dimensions in Arabic', () => {
+    expect(['قطعة واحدة', 'قطعتان', '6 قطع', '12 قطعة']).toEqual([1, 2, 6, 12].map(formatPieces))
+    expect(formatHours(null, null)).toBeNull()
+    expect(formatDimensions(10, 13)).toBe('10 × 13 سم')
   })
 
   it('builds wa.me links from E.164 numbers', () => {

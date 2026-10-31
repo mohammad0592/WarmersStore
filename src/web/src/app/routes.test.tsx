@@ -1,8 +1,13 @@
 import { screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { mockApi } from '@/test/mockApi'
 import { renderApp } from '@/test/renderApp'
 
 describe('routes', () => {
+  beforeEach(() => {
+    mockApi({ '/api/products': [], '/api/packages': [] })
+  })
+
   it('renders the Arabic home page', () => {
     renderApp('/')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('خليك دافي وين ما كنت')

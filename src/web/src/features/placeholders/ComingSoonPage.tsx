@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { EmptyState, PageHero } from '@/components/ui/Sections'
 
-type PageKey = 'products' | 'packages' | 'distributors'
+type PageKey = 'distributors'
 
-/** Stand-in so navigation works before each page is built (products/packages: M4, distributors: M5). */
+/** Stand-in so navigation works before the page is built (distributors: M5). */
 export function ComingSoonPage({ page }: { page: PageKey }) {
   const { t } = useTranslation()
 
