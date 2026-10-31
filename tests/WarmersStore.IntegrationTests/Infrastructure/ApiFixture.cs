@@ -118,6 +118,12 @@ public sealed class ApiFixture : IAsyncLifetime
     public Task<T> GetJsonAsync<T>(string url) =>
         Client.GetFromJsonAsync<T>(url, Json)!;
 
+    public async Task<T> WithDbAsync<T>(Func<AppDbContext, Task<T>> query)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        return await query(scope.ServiceProvider.GetRequiredService<AppDbContext>());
+    }
+
     public async Task WithDbAsync(Func<AppDbContext, Task> action)
     {
         await using var scope = _factory.Services.CreateAsyncScope();

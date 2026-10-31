@@ -170,4 +170,12 @@ export interface PublicStoreSettings {
   announcement: string | null
   minOrderTotal: number | null
   showDistributors: boolean
+  /** Admin-edited homepage text; each null falls back to the built-in Arabic text. */
+  homepage: HomepageText
+}
+
+export interface HomepageText {
+  heroTitle: string | null
+  heroDescription: string | null
+  whereToFindText: string | null
 }

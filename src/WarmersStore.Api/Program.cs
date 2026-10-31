@@ -7,10 +7,13 @@ using WarmersStore.Api.Common.Hosting;
 using WarmersStore.Api.Features;
 using WarmersStore.Api.Features.Admin;
 using WarmersStore.Api.Features.Catalog;
+using WarmersStore.Api.Features.CustomPackages;
+using WarmersStore.Api.Features.Delivery;
 using WarmersStore.Api.Features.Distributors;
 using WarmersStore.Api.Features.Health;
 using WarmersStore.Api.Features.Media;
 using WarmersStore.Api.Features.Packages;
+using WarmersStore.Api.Features.Settings;
 using WarmersStore.Api.Features.Orders;
 using WarmersStore.Api.Infrastructure.Persistence;
 
@@ -117,7 +120,11 @@ app.MapAdminApi()
     .MapAdminProductEndpoints()
     .MapAdminPackageEndpoints()
     .MapAdminCityEndpoints()
-    .MapAdminDistributorEndpoints();
+    .MapAdminDistributorEndpoints()
+    .MapAdminSettingsEndpoints()
+    .MapAdminCustomPackageEndpoints()
+    .MapAdminDeliveryEndpoints()
+    .MapAdminOrderEndpoints();
 app.MapSpaFallback();
 
 await app.InitializeDatabaseAsync();

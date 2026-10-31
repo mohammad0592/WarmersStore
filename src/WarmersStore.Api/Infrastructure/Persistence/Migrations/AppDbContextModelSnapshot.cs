@@ -1325,6 +1325,19 @@ namespace WarmersStore.Api.Infrastructure.Persistence.Migrations
                                 .HasColumnType("jsonb");
                         });
 
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Homepage", "WarmersStore.Api.Domain.StoreSettings.Homepage#HomepageContent", b1 =>
+                        {
+                            b1.Property<string>("HeroDescription");
+
+                            b1.Property<string>("HeroTitle");
+
+                            b1.Property<string>("WhereToFindText");
+
+                            b1
+                                .ToJson("homepage")
+                                .HasColumnType("jsonb");
+                        });
+
                     b.HasKey("Id")
                         .HasName("pk_store_settings");
 

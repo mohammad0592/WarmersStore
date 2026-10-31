@@ -17,7 +17,11 @@ public sealed record PublicStoreSettingsDto(
     SocialLinksDto Social,
     string? Announcement,
     decimal? MinOrderTotal,
-    bool ShowDistributors);
+    bool ShowDistributors,
+    HomepageTextDto Homepage);
+
+/// <summary>Admin-edited homepage text; null fields mean "use the site's default wording".</summary>
+public sealed record HomepageTextDto(string? HeroTitle, string? HeroDescription, string? WhereToFindText);
 
 public static class StoreSettingsEndpoints
 {
@@ -37,7 +41,8 @@ public static class StoreSettingsEndpoints
                 new SocialLinksDto(s.FacebookUrl, s.InstagramUrl, s.TikTokUrl),
                 s.AnnouncementActive ? s.Announcement?.Resolve(PublicApi.Language) : null,
                 s.MinOrderTotal,
-                s.ShowDistributors));
+                s.ShowDistributors,
+                new HomepageTextDto(s.Homepage?.HeroTitle, s.Homepage?.HeroDescription, s.Homepage?.WhereToFindText)));
         })
         .WithTags("Store settings");
 

@@ -16,6 +16,7 @@ export const defaultSettings: PublicStoreSettings = {
   announcement: null,
   minOrderTotal: null,
   showDistributors: false,
+  homepage: { heroTitle: null, heroDescription: null, whereToFindText: null },
 }
 
 /** Renders the real route tree at `path`, with store settings pre-seeded instead of fetched. */

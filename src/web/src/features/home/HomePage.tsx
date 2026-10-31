@@ -95,6 +95,7 @@ function HomeSection({
 
 function Hero({ imageUrl }: { imageUrl: string | undefined }) {
   const { t } = useTranslation()
+  const homepage = useStoreSettings().data?.homepage
   return (
     <section className="relative overflow-hidden bg-sand">
       <div aria-hidden="true" className="absolute -right-28 top-20 size-72 rounded-full bg-orange-200/30 blur-3xl" />
@@ -104,9 +105,9 @@ function Hero({ imageUrl }: { imageUrl: string | undefined }) {
             <Icon className="size-4" name="spark" /> {t('home.badge')}
           </span>
           <h1 className="max-w-xl text-5xl font-black leading-[1.15] tracking-tight text-stone-950 sm:text-6xl lg:text-7xl">
-            {t('home.title')}
+            {homepage?.heroTitle ?? t('home.title')}
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-stone-600">{t('home.description')}</p>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-stone-600">{homepage?.heroDescription ?? t('home.description')}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <ButtonLink to="/packages">
               {t('home.shopPackages')} <ForwardChevron />
@@ -224,6 +225,7 @@ function OrderingSteps() {
  */
 function WhereToFindUs() {
   const { t } = useTranslation()
+  const text = useStoreSettings().data?.homepage?.whereToFindText
   return (
     <section aria-labelledby="where-to-find-us" className="bg-sand py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -231,7 +233,7 @@ function WhereToFindUs() {
           <h2 className="text-3xl font-black tracking-tight sm:text-4xl" id="where-to-find-us">
             {t('home.whereToFind.title')}
           </h2>
-          <p className="mt-4 leading-7 text-stone-600">{t('home.whereToFind.text')}</p>
+          <p className="mt-4 leading-7 text-stone-600">{text ?? t('home.whereToFind.text')}</p>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           <div className="flex flex-col rounded-3xl border border-orange-100 bg-white p-7 shadow-sm">

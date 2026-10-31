@@ -5,13 +5,18 @@ import { Icon, type IconName } from '@/components/ui/Icon'
 import { useStoreSettings } from '@/features/settings/useStoreSettings'
 import { adminKeys, adminRequest, meQuery } from './adminApi'
 
-/** Sections appear here as their management pages are built (M9–M11). */
-const sections: { to: string; labelKey: 'admin.nav.dashboard' | 'admin.nav.products' | 'admin.nav.packages' | 'admin.nav.distributors' | 'admin.nav.cities'; icon: IconName; end?: boolean }[] = [
-  { to: '/admin', labelKey: 'admin.nav.dashboard', icon: 'info', end: true },
-  { to: '/admin/products', labelKey: 'admin.nav.products', icon: 'flame' },
-  { to: '/admin/packages', labelKey: 'admin.nav.packages', icon: 'package' },
-  { to: '/admin/distributors', labelKey: 'admin.nav.distributors', icon: 'map-pin' },
-  { to: '/admin/cities', labelKey: 'admin.nav.cities', icon: 'info' },
+type SectionKey = 'dashboard' | 'orders' | 'products' | 'packages' | 'customPackages' | 'delivery' | 'distributors' | 'cities' | 'settings'
+
+const sections: { to: string; key: SectionKey; icon: IconName; end?: boolean }[] = [
+  { to: '/admin', key: 'dashboard', icon: 'info', end: true },
+  { to: '/admin/orders', key: 'orders', icon: 'bag' },
+  { to: '/admin/products', key: 'products', icon: 'flame' },
+  { to: '/admin/packages', key: 'packages', icon: 'package' },
+  { to: '/admin/custom-packages', key: 'customPackages', icon: 'plus' },
+  { to: '/admin/delivery', key: 'delivery', icon: 'truck' },
+  { to: '/admin/distributors', key: 'distributors', icon: 'map-pin' },
+  { to: '/admin/cities', key: 'cities', icon: 'info' },
+  { to: '/admin/settings', key: 'settings', icon: 'edit' },
 ]
 
 export function AdminLayout() {
@@ -72,7 +77,7 @@ export function AdminLayout() {
                   end={section.end}
                   to={section.to}
                 >
-                  <Icon className="size-4" name={section.icon} /> {t(section.labelKey)}
+                  <Icon className="size-4" name={section.icon} /> {t(`admin.nav.${section.key}`)}
                 </NavLink>
               </li>
             ))}

@@ -15,6 +15,11 @@ import { CitiesPage } from './directory/CitiesPage'
 import { DistributorEditPage } from './directory/DistributorEditPage'
 import { DistributorsListPage } from './directory/DistributorsListPage'
 import { LoginPage } from './LoginPage'
+import { OrderDetailsPage } from './orders/OrderDetailsPage'
+import { OrdersListPage } from './orders/OrdersListPage'
+import { CustomRulesPage } from './settings/CustomRulesPage'
+import { DeliveryPage } from './settings/DeliveryPage'
+import { StoreSettingsPage } from './settings/StoreSettingsPage'
 
 /**
  * The admin area, loaded as its own bundle only when someone opens /admin. Every page is also
@@ -51,6 +56,8 @@ export default function AdminApp() {
           }
         >
           <Route element={<DashboardPage />} index />
+          <Route element={<OrdersListPage />} path="orders" />
+          <Route element={<OrderDetailsPage />} path="orders/:id" />
           <Route element={<ProductsListPage />} path="products" />
           <Route element={<ProductEditPage />} path="products/new" />
           <Route element={<ProductEditPage />} path="products/:id" />
@@ -61,6 +68,9 @@ export default function AdminApp() {
           <Route element={<DistributorEditPage />} path="distributors/new" />
           <Route element={<DistributorEditPage />} path="distributors/:id" />
           <Route element={<CitiesPage />} path="cities" />
+          <Route element={<CustomRulesPage />} path="custom-packages" />
+          <Route element={<DeliveryPage />} path="delivery" />
+          <Route element={<StoreSettingsPage />} path="settings" />
           <Route element={<AdminNotFound />} path="*" />
         </Route>
       </Routes>

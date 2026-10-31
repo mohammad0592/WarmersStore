@@ -27,5 +27,15 @@ public class StoreSettings
     /// <summary>Shows the distributors nav link and homepage section.</summary>
     public bool ShowDistributors { get; set; }
 
+    /// <summary>Editable homepage text; anything left empty falls back to the site's default wording.</summary>
+    public HomepageContent? Homepage { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public sealed class HomepageContent
+{
+    public string? HeroTitle { get; set; }
+    public string? HeroDescription { get; set; }
+    public string? WhereToFindText { get; set; }
 }

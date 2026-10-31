@@ -69,4 +69,16 @@ describe('home page', () => {
     const cta = screen.getByRole('link', { name: 'احكِ معنا على واتساب' })
     expect(cta).toHaveAttribute('href', 'https://wa.me/970599000000')
   })
+
+  it('uses the admin-edited homepage text, falling back to the built-in text', () => {
+    mockApi({ '/api/products': [], '/api/packages': [] })
+    renderApp('/', {
+      showDistributors: true,
+      homepage: { heroTitle: 'دفا لكل يوم', heroDescription: null, whereToFindText: 'موزعونا في نابلس وجنين.' },
+    })
+
+    expect(screen.getByRole('heading', { level: 1, name: 'دفا لكل يوم' })).toBeInTheDocument()
+    expect(screen.getByText(/دفا عملي يدوم لساعات/)).toBeInTheDocument()
+    expect(screen.getByText('موزعونا في نابلس وجنين.')).toBeInTheDocument()
+  })
 })

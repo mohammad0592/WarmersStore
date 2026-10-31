@@ -19,6 +19,7 @@ internal sealed class StoreSettingsConfiguration : IEntityTypeConfiguration<Stor
         builder.Property(s => s.InstagramUrl).HasMaxLength(300);
         builder.Property(s => s.TikTokUrl).HasMaxLength(300);
         builder.ComplexProperty(s => s.Announcement, c => c.ToJson());
+        builder.ComplexProperty(s => s.Homepage, c => c.ToJson());
 
         builder.ToTable(t =>
         {

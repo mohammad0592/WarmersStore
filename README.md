@@ -118,7 +118,7 @@ Checkout responses:
 
 The cart sends only ids and quantities; prices sent by a client are ignored. Opening WhatsApp doesn't mean the order was sent, so nothing is marked confirmed.
 
-Submitting needs the store's WhatsApp number (`store_settings.whats_app_number`), which the admin sets in M11. Until then, `submit` returns `422 ordering_unavailable`.
+Submitting needs the store's WhatsApp number, which the admin sets under **Admin → إعدادات المتجر**. Until then, `submit` returns `422 ordering_unavailable`. Saved orders are confirmed by hand under **Admin → الطلبات** after the customer's message arrives.
 
 ## Admin dashboard (`/admin`)
 

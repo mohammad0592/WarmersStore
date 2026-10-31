@@ -66,7 +66,7 @@ DeliverySettings (single row)  Mode (None | Flat | PerArea), FlatFee?, FreeThres
 StoreSettings (single row)
   StoreName, LogoKey?, WhatsAppNumber (E.164), Phone?, Email?, Address?
   FacebookUrl?, InstagramUrl?, TikTokUrl?
-  HomepageContent jsonb (incl. "وين بتلاقينا؟" text)          -- added in M11 once its shape is known
+  Homepage jsonb { HeroTitle?, HeroDescription?, WhereToFindText? }   -- M11; null fields fall back to built-in text
   Announcement?, AnnouncementActive, MinOrderTotal?
   ShowDistributors bool (default false)                         -- NEW
 
@@ -189,7 +189,7 @@ Each milestone is small, testable and demoable.
 | M8 ✅ | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
 | M9 ✅ | Admin products (with images) and packages | |
 | **M10 ✅** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
-| M11 | Admin custom rules, delivery, store settings (**incl. `ShowDistributors` and "وين بتلاقينا؟" text**), orders list | |
+| **M11 ✅** | **Admin custom rules, delivery, store settings (incl. `ShowDistributors` and "وين بتلاقينا؟" text), orders list:** store settings + logo, custom-package limits/per-product rules/discount tiers, delivery mode + areas, orders list (status filter, search) with details and status changes | Integration tests: settings validation and WhatsApp normalization (ordering turns on once set), rules round-trip and public rules, PerArea needs an active area, Flat needs a fee, order search/details, only allowed status moves (409 otherwise) |
 | M12 | Hardening, Railway deploy, production checklist, README | Smoke test on the live deployment |
 
 M5 depends only on M1 and M3. It can be built in parallel with M6–M7 because it shares no code with the cart or checkout.
@@ -326,3 +326,20 @@ Decisions taken while building that refine the plan above:
   - Normalization moved to `Common/PhoneNumbers` and is shared by checkout and distributors, so distributors don't depend on the checkout code.
   - A distributor number written locally with one leading 0 (`059…`, `09…`) is read as +970. International numbers are kept.
 - **M10, still pending:** the `ShowDistributors` switch (nav link and homepage section) is set in M11's store settings.
+- **M11, store settings:**
+  - One page covers store name, WhatsApp number, minimum order, the `ShowDistributors` switch, the announcement, homepage text, contacts, social links and the logo.
+  - The WhatsApp number and phone use the same normalization as distributors (a local `059…` is read as +970). Social links must be https.
+  - An announcement can't be switched on while empty.
+  - Homepage text (hero title, hero description, "وين بتلاقينا؟" text) is optional. Each empty field falls back to the built-in Arabic text, which the admin form shows as the placeholder. Badges, buttons and section titles stay in the translation file.
+  - The logo is stored like other images (validated, resized, WebP) under `branding/`.
+- **M11, custom-package rules:**
+  - The whole rule set is saved at once. Per-product rules and discount tiers are replaced, not merged. Empty limits are sent as null ("no rule"), and per-product rows with no limits are dropped.
+  - Validation: min ≤ max, unique products and tier thresholds, percentages ≤ 100. Inactive tiers are kept for the admin but not published.
+- **M11, delivery:**
+  - Mode `None` / `Flat` / `PerArea`. Flat requires a fee; PerArea requires at least one active area.
+  - Areas have add, edit, reorder and delete. Deleting an area never changes past orders, because they keep a copy of its name.
+- **M11, orders:**
+  - Newest first, 25 per page. Status filter and search (by reference, name, or 4+ phone digits) live in the URL.
+  - The details page shows the items, totals, customer and the expected WhatsApp message, with a copy button and a link that opens the chat.
+  - Allowed status moves: pending → confirmed or cancelled, and confirmed → completed or cancelled. Completed and cancelled are final. Anything else returns 409.
+  - Every change goes through a confirmation dialog. Nothing confirms an order automatically; the page reminds the admin that opening WhatsApp isn't sending.
