@@ -181,7 +181,7 @@ Each milestone is small, testable and demoable.
 | M0 ✅ | Repo, solution, Vite app, compose Postgres, `/health`, SPA served by API, Dockerfile | `docker build` and run locally serve the SPA and `/health` |
 | M1 ✅ | Entities and migrations (**incl. City, Distributor**), development-only placeholder seed (distributors marked "(بيانات تجريبية)"), public GET APIs (**incl. `/api/cities`, `/api/distributors`**) | Integration tests: only active items returned; city filter works; inactive distributor → 404 |
 | M2 ✅ | Pricing engine, rule validator, quote and submit endpoints, WhatsApp message builder | Unit tests for every rule and for rounding; tampered-cart tests |
-| M3 | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
+| M3 ✅ | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
 | M4 | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
 | **M5** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
 | M6 | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
@@ -225,3 +225,8 @@ Decisions taken while building that refine the plan above:
   - Phone numbers are normalized to E.164: spaces, dashes, a leading `00` and Arabic-Indic digits are accepted.
   - Control characters are removed, and line breaks are kept only in the notes and delivery instructions.
 - **M2, no order persistence yet:** `submit` returns `reference: null`, and the message has no reference line until saved orders are decided (M7).
+- **M3, design source:** the Figma Make code export lives in `design/figma-export/` and is git-ignored. It is a Next.js + Payload app, used only as a visual reference: its tokens, icons and component styles were ported into `src/web`, and its Payload/CMS parts are ignored.
+- **M3, content the export hardcodes:** the announcement bar comes from store settings and is hidden when empty. The export's fixed announcement text, delivery claim and safety copy are not reused.
+- **M3, navigation:** "موزعونا المعتمدون" appears in the header, mobile menu and footer only when `showDistributors` is on, though `/distributors` stays reachable directly. Products, packages and distributors show "coming soon" placeholders until M4/M5.
+- **M3, cart button:** the design's header cart button is added in M6 together with the cart, so the site never shows a button that does nothing.
+- **M3, font:** Cairo is self-hosted (`@fontsource-variable/cairo`) instead of the export's Google Fonts import. That avoids a third-party request and keeps a future Content-Security-Policy simple.
