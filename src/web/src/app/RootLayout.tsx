@@ -1,12 +1,16 @@
 import { useTranslation } from 'react-i18next'
 import { Outlet, ScrollRestoration } from 'react-router'
+import { CartDrawer } from '@/features/cart/CartDrawer'
+import { Toast } from '@/features/cart/Toast'
 import { useStoreSettings } from '@/features/settings/useStoreSettings'
 import { SiteFooter } from './layout/SiteFooter'
 import { SiteHeader } from './layout/SiteHeader'
+import { useHashScroll } from './layout/useHashScroll'
 
 export function RootLayout() {
   const { t } = useTranslation()
   const { data: settings } = useStoreSettings()
+  useHashScroll()
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -24,6 +28,8 @@ export function RootLayout() {
         <Outlet />
       </main>
       <SiteFooter />
+      <CartDrawer />
+      <Toast />
       <ScrollRestoration />
     </div>
   )

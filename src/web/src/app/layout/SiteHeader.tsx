@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router'
 import { Icon } from '@/components/ui/Icon'
+import { CartButton } from '@/features/cart/CartButton'
 import { useStoreSettings } from '@/features/settings/useStoreSettings'
 import { BrandMark } from './BrandMark'
 import { mainNavigation } from './navigation'
-
-// The cart button from the design joins the header with the cart itself (M6).
 
 export function SiteHeader() {
   const { t } = useTranslation()
@@ -45,12 +44,13 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2">
+          <CartButton />
           <button
             aria-controls="mobile-menu"
             aria-expanded={menuOpen}
             aria-label={menuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
-            className="grid size-11 place-items-center rounded-xl border border-stone-200 bg-white"
+            className="grid size-11 place-items-center rounded-xl border border-stone-200 bg-white md:hidden"
             onClick={() => setMenuOpen((open) => !open)}
             type="button"
           >

@@ -1,4 +1,63 @@
-import type { City, Distributor, Product, ReadyMadePackage } from '@/lib/api/types'
+import type { City, CustomPackageRules, Distributor, Product, Quote, QuoteLine, ReadyMadePackage } from '@/lib/api/types'
+
+export function rules(overrides: Partial<CustomPackageRules> = {}): CustomPackageRules {
+  return {
+    isEnabled: true,
+    minItems: null,
+    maxItems: null,
+    minSubtotal: null,
+    maxQuantityPerProduct: null,
+    productRules: [],
+    discountTiers: [],
+    ...overrides,
+  }
+}
+
+type RequestLine = { lineId: string; kind: 'ReadyMade' | 'Custom'; packageId?: number; quantity?: number; items?: { productId: number; quantity: number }[] }
+
+/**
+ * A stand-in for POST /api/checkout/quote: prices ready-made lines at `packagePrice` and custom
+ * items at `itemPrice`. Enough to check the drawer shows server numbers, not its own.
+ */
+export function quoteFor(
+  body: unknown,
+  { packagePrice = 49, itemPrice = 6, lineErrors = {} }: { packagePrice?: number; itemPrice?: number; lineErrors?: Record<string, string> } = {},
+): Quote {
+  const requestLines = (body as { lines: RequestLine[] }).lines
+  let customNumber = 0
+  const lines: QuoteLine[] = requestLines.map((line) => {
+    const errors = lineErrors[line.lineId] ? [{ code: 'package_not_found', message: lineErrors[line.lineId], params: null }] : []
+    if (line.kind === 'ReadyMade') {
+      const total = packagePrice * line.quantity!
+      return {
+        lineId: line.lineId, kind: 'ReadyMade', packageId: line.packageId!, name: 'باقة الأسبوع', quantity: line.quantity!,
+        unitPrice: packagePrice, totalUnits: 7 * line.quantity!, subtotal: total, discount: 0, lineTotal: total,
+        items: [{ productId: 1, productName: 'لاصق تدفئة الجسم', quantity: 5, sellingUnit: 'RetailBag', pieces: 5, unitPrice: null, subtotal: null }],
+        errors,
+      }
+    }
+    customNumber += 1
+    const items = line.items!.map((i) => ({
+      productId: i.productId, productName: `منتج ${i.productId}`, quantity: i.quantity, sellingUnit: 'RetailBag' as const,
+      pieces: i.quantity, unitPrice: itemPrice, subtotal: itemPrice * i.quantity,
+    }))
+    const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
+    return {
+      lineId: line.lineId, kind: 'Custom', packageId: null, name: `باقة مخصّصة ${customNumber}`, quantity: 1, unitPrice: null,
+      totalUnits: items.reduce((s, i) => s + i.quantity, 0), subtotal, discount: 0, lineTotal: subtotal, items, errors,
+    }
+  })
+  const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0)
+  return {
+    lines,
+    subtotal,
+    discountTotal: 0,
+    delivery: { mode: 'None', areaId: null, areaName: null, fee: 0, isFree: false },
+    total: subtotal,
+    errors: [],
+    isValid: lines.every((l) => l.errors.length === 0),
+  }
+}
 
 export const nablus = { id: 1, slug: 'nablus', name: 'نابلس' }
 export const hebron = { id: 3, slug: 'hebron', name: 'الخليل' }

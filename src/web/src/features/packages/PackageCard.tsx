@@ -8,7 +8,7 @@ import { packageSavings } from './packageSavings'
 
 /**
  * Ready-made package card from the design. `actions` holds the quantity selector and
- * add-to-cart button, which arrive with the cart (M6).
+ * add-to-cart button (see AddToCartControls).
  */
 export function PackageCard({ item, actions }: { item: ReadyMadePackage; actions?: ReactNode }) {
   const { t } = useTranslation()

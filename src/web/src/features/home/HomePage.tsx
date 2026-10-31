@@ -9,6 +9,7 @@ import { MediaImage, SectionTitle } from '@/components/ui/Sections'
 import { CardGridSkeleton } from '@/components/ui/States'
 import { ProductCard } from '@/features/catalog/ProductCard'
 import { packagesQuery, productsQuery } from '@/features/catalog/queries'
+import { AddToCartControls } from '@/features/packages/AddToCartControls'
 import { PackageCard } from '@/features/packages/PackageCard'
 import { useStoreSettings } from '@/features/settings/useStoreSettings'
 import type { ReadyMadePackage } from '@/lib/api/types'
@@ -57,7 +58,7 @@ export function HomePage() {
         <HomeSection eyebrowKey="home.packages.eyebrow" titleKey="home.packages.title">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featured.map((item) => (
-              <PackageCard item={item} key={item.id} />
+              <PackageCard actions={<AddToCartControls item={item} />} item={item} key={item.id} />
             ))}
           </div>
           <div className="mt-8 text-center">

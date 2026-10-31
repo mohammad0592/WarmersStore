@@ -184,7 +184,7 @@ Each milestone is small, testable and demoable.
 | M3 ✅ | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
 | M4 ✅ | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
 | **M5 ✅** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
-| M6 | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
+| M6 ✅ | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
 | M7 | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
 | M8 | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
 | M9 | Admin products (with images) and packages | |
@@ -253,3 +253,17 @@ Decisions taken while building that refine the plan above:
   - No distributors at all: "coming soon", with a link to order online.
   - Unknown city or no shops in it: a link back to all cities and one to order online. These are the page's only links into online ordering; there are no cart, order or delivery buttons.
 - **M5, isolation:** an `oxlint` `no-restricted-imports` override stops `src/features/distributors/**` from importing cart, checkout, packages or builder code.
+- **M6, cart storage:**
+  - The cart is a Zustand store saved to `localStorage` under `dafa-cart`, holding line ids, package/product ids, quantities, and package names for display while loading. No prices are stored.
+  - Whatever is read back is checked first. Malformed lines, duplicate ids and duplicate products are dropped, and quantities are capped (99 per ready-made line, 999 per product). The 30-line limit matches the API.
+  - If storage is blocked, the cart works in memory only.
+- **M6, prices:** every amount in the drawer comes from `POST /api/checkout/quote`, which re-runs when the cart changes, and the server's per-line errors are shown on the line. The builder's live total is a client-side copy of the server rules (`customPricing.ts`, unit-tested against the same rounding cases) for instant feedback; the cart then shows the server's numbers.
+- **M6, cart lines:**
+  - Adding the same ready-made package again increases its quantity.
+  - Every custom package is its own line, and can be edited (`/packages?edit=<lineId>#custom` loads it into the builder and "حفظ التعديلات" updates it in place), duplicated (the copy goes right after it) or removed.
+  - The header badge counts ready-made quantities plus one per custom package.
+- **M6, builder:** shows only products that are `availableForCustom`. The −/+ control stops at the stricter of the store-wide and per-product maximums, and the first unmet rule is shown as an Arabic hint. "Add" stays disabled until every rule is met. The whole section shows a message instead when custom packages are switched off.
+- **M6, drawer:** behaves as a dialog (Escape closes it, focus stays inside it and returns afterwards, the page behind doesn't scroll), with an empty state.
+  - Delivery reads "يتم تأكيده عند التواصل" (mode None), "حسب منطقة التوصيل" (per-area, no area chosen yet), "مجاني" or the fee.
+  - The checkout button joins in M7.
+- **M6, hash links:** `/packages#custom` (home, footer, drawer "تعديل") now scrolls to the builder after client-side navigation.

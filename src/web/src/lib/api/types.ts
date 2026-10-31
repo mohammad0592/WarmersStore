@@ -55,6 +55,66 @@ export interface ReadyMadePackage {
   items: PackageItem[]
 }
 
+// ---- Custom package rules (null = not configured) ----
+
+export interface CustomPackageRules {
+  isEnabled: boolean
+  minItems: number | null
+  maxItems: number | null
+  minSubtotal: number | null
+  maxQuantityPerProduct: number | null
+  productRules: { productId: number; minQty: number | null; maxQty: number | null }[]
+  discountTiers: { minItems: number; type: 'Percent' | 'Fixed'; value: number }[]
+}
+
+// ---- Checkout quote: the server's pricing of the cart ----
+
+export type CartLineKind = 'ReadyMade' | 'Custom'
+export type DeliveryMode = 'None' | 'Flat' | 'PerArea'
+
+/** A business-rule problem; `message` is display-ready Arabic, `code` is stable. */
+export interface CheckoutError {
+  code: string
+  message: string
+  params: Record<string, unknown> | null
+}
+
+export interface QuoteItem {
+  productId: number
+  productName: string | null
+  quantity: number
+  sellingUnit: SellingUnit | null
+  pieces: number
+  unitPrice: number | null
+  subtotal: number | null
+}
+
+export interface QuoteLine {
+  lineId: string
+  kind: CartLineKind
+  packageId: number | null
+  name: string | null
+  quantity: number
+  unitPrice: number | null
+  totalUnits: number
+  subtotal: number
+  discount: number
+  lineTotal: number
+  items: QuoteItem[]
+  errors: CheckoutError[]
+}
+
+export interface Quote {
+  lines: QuoteLine[]
+  /** After custom-package discounts, before delivery. */
+  subtotal: number
+  discountTotal: number
+  delivery: { mode: DeliveryMode; areaId: number | null; areaName: string | null; fee: number | null; isFree: boolean }
+  total: number
+  errors: CheckoutError[]
+  isValid: boolean
+}
+
 /** A city a customer can pick on /distributors: active, with at least one active distributor. */
 export interface City {
   id: number
