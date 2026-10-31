@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+# ---- 1. Build the React app ----
+FROM node:24-alpine AS web
+WORKDIR /web
+COPY src/web/package.json src/web/package-lock.json ./
+RUN npm ci
+COPY src/web/ ./
+RUN npm run build
+
+# ---- 2. Publish the ASP.NET Core API ----
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
+WORKDIR /src
+COPY global.json ./
+COPY src/WarmersStore.Api/WarmersStore.Api.csproj src/WarmersStore.Api/
+RUN dotnet restore src/WarmersStore.Api/WarmersStore.Api.csproj
+COPY src/WarmersStore.Api/ src/WarmersStore.Api/
+RUN dotnet publish src/WarmersStore.Api/WarmersStore.Api.csproj \
+    -c Release -o /app/publish --no-restore -p:UseAppHost=false
+
+# ---- 3. Runtime image ----
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Production \
+    ASPNETCORE_HTTP_PORTS=8080
+COPY --from=api /app/publish ./
+COPY --from=web /web/dist ./wwwroot
+# Non-root user provided by the .NET base image.
+USER $APP_UID
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "WarmersStore.Api.dll"]

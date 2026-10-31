@@ -1,0 +1,14 @@
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/TestResults
+src/WarmersStore.Api/wwwroot
+.git
+.vs
+.vscode
+.idea
+tests
+*.md
+.env
+.env.*

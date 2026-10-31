@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Values follow the published Figma site (Cairo, orange-600 primary);
+ * the full design-system port happens in M3.
+ */
+@theme {
+  --font-sans: 'Cairo Variable', 'Cairo', system-ui, sans-serif;
+
+  --color-brand-50: var(--color-orange-50);
+  --color-brand-100: var(--color-orange-100);
+  --color-brand-500: var(--color-orange-500);
+  --color-brand-600: var(--color-orange-600);
+  --color-brand-700: var(--color-orange-700);
+
+  --color-ink: var(--color-stone-950);
+  --color-muted: var(--color-stone-600);
+  --color-surface: var(--color-white);
+  --color-surface-warm: #fff7ed;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-surface font-sans text-ink antialiased;
+  }
+}

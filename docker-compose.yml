@@ -1,0 +1,33 @@
+# Local development services.
+#   docker compose up -d db              -> PostgreSQL only (run API/web with dotnet/npm)
+#   docker compose --profile app up --build  -> also runs the production image on :8080
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: warmers
+      POSTGRES_USER: warmers
+      POSTGRES_PASSWORD: warmers_dev # local development only
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warmers -d warmers"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    profiles: ["app"]
+    build: .
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=warmers;Username=warmers;Password=warmers_dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
