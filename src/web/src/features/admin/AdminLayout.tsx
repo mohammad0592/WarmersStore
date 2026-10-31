@@ -6,8 +6,10 @@ import { useStoreSettings } from '@/features/settings/useStoreSettings'
 import { adminKeys, adminRequest, meQuery } from './adminApi'
 
 /** Sections appear here as their management pages are built (M9–M11). */
-const sections: { to: string; labelKey: 'admin.nav.dashboard'; icon: IconName; end?: boolean }[] = [
-  { to: '/admin', labelKey: 'admin.nav.dashboard', icon: 'package', end: true },
+const sections: { to: string; labelKey: 'admin.nav.dashboard' | 'admin.nav.products' | 'admin.nav.packages'; icon: IconName; end?: boolean }[] = [
+  { to: '/admin', labelKey: 'admin.nav.dashboard', icon: 'info', end: true },
+  { to: '/admin/products', labelKey: 'admin.nav.products', icon: 'flame' },
+  { to: '/admin/packages', labelKey: 'admin.nav.packages', icon: 'package' },
 ]
 
 export function AdminLayout() {

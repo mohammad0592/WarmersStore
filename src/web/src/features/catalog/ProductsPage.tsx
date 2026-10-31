@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { Outlet, useParams } from 'react-router'
 import { TrustSection } from '@/components/TrustSection'
 import { EmptyState, PageHero } from '@/components/ui/Sections'
 import { CardGridSkeleton, ErrorState } from '@/components/ui/States'
@@ -10,7 +11,8 @@ import { productsQuery } from './queries'
 export function ProductsPage() {
   const { t } = useTranslation()
   const products = useQuery(productsQuery)
-  useDocumentTitle(t('pages.products.title'))
+  const { slug } = useParams()
+  useDocumentTitle(t('pages.products.title'), !slug) // the details dialog sets the product's name
 
   return (
     <>
@@ -31,6 +33,7 @@ export function ProductsPage() {
         )}
       </section>
       <TrustSection />
+      <Outlet />
     </>
   )
 }

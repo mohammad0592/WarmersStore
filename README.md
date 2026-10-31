@@ -169,7 +169,23 @@ Build and run the same image Railway will run, with the compose database:
 docker compose --profile app up --build
 ```
 
-Then open http://localhost:8080.
+Then open http://localhost:8088. Host port 8088 is used because 8080 is often taken, for example by an Oracle XE listener. Uploaded images go to the `media` compose volume.
+
+## Product and package images
+
+Admins upload images in the admin (`/admin/products/…`, `/admin/packages/…`). Every upload is:
+
+- **Checked:** it must decode as JPEG, PNG or WebP by its content, not its name. The limits are 5 MB, and 50 MP for JPEG or 20 MP for others.
+- **Cleaned up:** turned upright from EXIF, shrunk to at most 1600 px, re-encoded to WebP, and stripped of all metadata (camera, GPS).
+- **Stored:** under a random name and served at `/media/…` with a one-year immutable cache.
+
+Processing uses **SkiaSharp** (MIT licence). ImageSharp was rejected for two reasons: v4 requires a Six Labors license key to build in Release, and v3.1.x has unpatched high-severity advisories.
+
+Where files are stored:
+
+- **Local development:** `src/WarmersStore.Api/data/media` (git-ignored). Vite proxies `/media` to the API.
+- **Docker:** `/data/media` (`Media__Root`), owned by the non-root app user. Mount a volume there.
+- **Railway:** attach a Volume at `/data/media`. Railway mounts volumes as root, so if uploads fail with permission errors, set `RAILWAY_RUN_UID=0` on the service. This is covered in the M12 deployment checklist.
 
 ## Configuration
 
@@ -189,6 +205,8 @@ All production configuration comes from environment variables; nothing secret is
 | `RateLimiting__LoginPerMinute` | Admin sign-in attempts per client IP per minute (default 10) |
 | `Admin__Email`, `Admin__Password` | Create the first admin on startup if none exists; ignored afterwards |
 | `Orders__UnconfirmedRetentionDays` | Days before unconfirmed or cancelled orders are deleted (default 90) |
+| `Media__Root` | Folder for uploaded images (image default `/data/media`; mount a volume) |
+| `Media__MaxUploadBytes` | Largest accepted upload (default 5 MB) |
 
 The app refuses to start if no database is configured.
 

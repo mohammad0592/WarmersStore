@@ -28,7 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <h3 className="text-lg font-black">
           {/* The whole card is clickable through this link's overlay. */}
-          <Link className="after:absolute after:inset-0" to={`/products/${product.slug}`}>
+          <Link className="after:absolute after:inset-0" preventScrollReset to={`/products/${product.slug}`}>
             {product.name}
           </Link>
         </h3>

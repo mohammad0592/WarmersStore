@@ -6,6 +6,10 @@ import { ErrorState } from '@/components/ui/States'
 import { ApiError } from '@/lib/api/client'
 import { AdminLayout } from './AdminLayout'
 import { adminKeys, meQuery, setUnauthorizedHandler } from './adminApi'
+import { PackageEditPage } from './catalog/PackageEditPage'
+import { PackagesListPage } from './catalog/PackagesListPage'
+import { ProductEditPage } from './catalog/ProductEditPage'
+import { ProductsListPage } from './catalog/ProductsListPage'
 import { DashboardPage } from './DashboardPage'
 import { LoginPage } from './LoginPage'
 
@@ -44,6 +48,12 @@ export default function AdminApp() {
           }
         >
           <Route element={<DashboardPage />} index />
+          <Route element={<ProductsListPage />} path="products" />
+          <Route element={<ProductEditPage />} path="products/new" />
+          <Route element={<ProductEditPage />} path="products/:id" />
+          <Route element={<PackagesListPage />} path="packages" />
+          <Route element={<PackageEditPage />} path="packages/new" />
+          <Route element={<PackageEditPage />} path="packages/:id" />
           <Route element={<AdminNotFound />} path="*" />
         </Route>
       </Routes>

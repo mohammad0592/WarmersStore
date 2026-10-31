@@ -26,9 +26,13 @@ RUN dotnet ef migrations bundle --project src/WarmersStore.Api \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
-    ASPNETCORE_HTTP_PORTS=8080
+    ASPNETCORE_HTTP_PORTS=8080 \
+    Media__Root=/data/media
 COPY --from=api /app/publish ./
 COPY --from=web /web/dist ./wwwroot
+# Uploaded images live here; mount a volume at /data/media so they survive redeploys.
+# Owned by the app user so the non-root process can write to it.
+RUN mkdir -p /data/media && chown $APP_UID /data/media
 # Non-root user provided by the .NET base image.
 USER $APP_UID
 EXPOSE 8080

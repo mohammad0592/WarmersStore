@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { product } from '@/test/fixtures'
 import { mockApi } from '@/test/mockApi'
@@ -37,32 +37,61 @@ describe('products page', () => {
   })
 })
 
-describe('product details page', () => {
-  it('shows specifications and leaves out guidance that has not been supplied', async () => {
-    mockApi({ '/api/products/hand-warmer': product() })
+describe('product details dialog', () => {
+  const dialog = () => screen.getByRole('dialog', { name: 'تفاصيل المنتج' })
+
+  it('opens over the catalog with specifications, leaving out guidance not yet supplied', async () => {
+    mockApi({ '/api/products': [product()], '/api/products/hand-warmer': product() })
     renderApp('/products/hand-warmer')
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'دفاية اليدين' })).toBeInTheDocument()
-    expect(screen.getByText('8–10 ساعات تقريباً')).toBeInTheDocument()
-    expect(screen.getByText('بالكيس (قطعتان)')).toBeInTheDocument()
-    expect(screen.queryByText('طريقة الاستخدام')).toBeNull()
-    expect(screen.queryByText('تنبيه مهم')).toBeNull()
-    expect(screen.getByRole('link', { name: /شوف الباقات المتاحة/ })).toHaveAttribute('href', '/packages')
-    expect(document.title).toBe('دفاية اليدين | دفا')
+    expect(await within(dialog()).findByRole('heading', { level: 2, name: 'دفاية اليدين' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'منتجاتنا' })).toBeInTheDocument() // the list stays behind
+    expect(within(dialog()).getByText('8–10 ساعات تقريباً')).toBeInTheDocument()
+    expect(within(dialog()).getByText('بالكيس (قطعتان)')).toBeInTheDocument()
+    expect(within(dialog()).queryByText('طريقة الاستخدام')).toBeNull()
+    expect(within(dialog()).queryByText('تنبيه مهم')).toBeNull()
+    expect(within(dialog()).getByRole('link', { name: 'شوف الباقات المتاحة' })).toHaveAttribute('href', '/packages')
+    await waitFor(() => expect(document.title).toBe('دفاية اليدين | دفا'))
+  })
+
+  it('opens from a product card and closes back to the list', async () => {
+    mockApi({ '/api/products': [product()], '/api/products/hand-warmer': product() })
+    const { router } = renderApp('/products')
+
+    fireEvent.click(await screen.findByRole('link', { name: 'دفاية اليدين' }))
+    expect(await screen.findByRole('dialog', { name: 'تفاصيل المنتج' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/products/hand-warmer')
+
+    fireEvent.click(within(dialog()).getAllByRole('button', { name: 'إغلاق' }).at(-1)!)
+
+    expect(router.state.location.pathname).toBe('/products')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await waitFor(() => expect(document.title).toBe('منتجاتنا | دفا'))
+  })
+
+  it('closes with Escape', async () => {
+    mockApi({ '/api/products': [product()], '/api/products/hand-warmer': product() })
+    const { router } = renderApp('/products/hand-warmer')
+    await screen.findByRole('dialog', { name: 'تفاصيل المنتج' })
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(router.state.location.pathname).toBe('/products')
   })
 
   it('shows usage and safety guidance when the business has supplied it', async () => {
-    mockApi({ '/api/products/hand-warmer': product({ usageGuidance: 'افتح العبوة.', safetyInfo: 'تنبيه من المورّد.' }) })
+    mockApi({ '/api/products': [], '/api/products/hand-warmer': product({ usageGuidance: 'افتح العبوة.', safetyInfo: 'تنبيه من المورّد.' }) })
     renderApp('/products/hand-warmer')
 
     expect(await screen.findByText('افتح العبوة.')).toBeInTheDocument()
+    expect(within(dialog()).getByRole('heading', { name: 'تنبيه مهم' })).toBeInTheDocument()
     expect(screen.getByText('تنبيه من المورّد.')).toBeInTheDocument()
   })
 
   it('handles an inactive or unknown product', async () => {
-    mockApi({})
+    mockApi({ '/api/products': [] })
     renderApp('/products/gone')
 
-    expect(await screen.findByText('هذا المنتج غير متوفر حالياً.')).toBeInTheDocument()
+    expect(await within(dialog()).findByText('هذا المنتج غير متوفر حالياً.')).toBeInTheDocument()
   })
 })

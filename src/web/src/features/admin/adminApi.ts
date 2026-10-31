@@ -51,10 +51,42 @@ export async function adminRequest<T>(method: 'GET' | 'POST' | 'PUT' | 'PATCH' |
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
 }
 
+/** Multipart upload (images). The browser sets the multipart Content-Type with its boundary. */
+export async function adminUpload<T>(method: 'POST' | 'PUT', path: string, form: FormData): Promise<T> {
+  const response = await fetch(path, {
+    method,
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json', 'X-Dafa-Admin': '1' },
+    body: form,
+  })
+  if (response.status === 401) onUnauthorized?.()
+  if (!response.ok) {
+    const problem: unknown = await response.json().catch(() => undefined)
+    throw new ApiError(response.status, `${method} ${path} failed with ${response.status}`, problem)
+  }
+  return (await response.json()) as T
+}
+
+/** Field errors from a ValidationProblemDetails body, keyed the way react-hook-form names fields. */
+export function validationErrors(error: unknown): Record<string, string> {
+  if (!(error instanceof ApiError) || error.status !== 400) return {}
+  const errors = (error.body as { errors?: Record<string, string[]> } | undefined)?.errors ?? {}
+  return Object.fromEntries(Object.entries(errors).map(([key, messages]) => [key.replace(/\[(\d+)\]/g, '.$1'), messages[0]]))
+}
+
+/** The Arabic `detail` of a ProblemDetails error (409 conflicts etc.). */
+export function problemDetail(error: unknown): string | null {
+  return error instanceof ApiError ? ((error.body as { detail?: string } | undefined)?.detail ?? null) : null
+}
+
 export const adminKeys = {
   all: ['admin'] as const,
   me: ['admin', 'me'] as const,
   dashboard: ['admin', 'dashboard'] as const,
+  products: ['admin', 'products'] as const,
+  product: (id: number) => ['admin', 'products', id] as const,
+  packages: ['admin', 'packages'] as const,
+  package: (id: number) => ['admin', 'packages', id] as const,
 }
 
 export const meQuery = queryOptions({

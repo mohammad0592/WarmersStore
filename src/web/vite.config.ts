@@ -17,10 +17,14 @@ export default defineConfig({
     proxy: {
       '/api': apiTarget,
       '/health': apiTarget,
+      '/media': apiTarget, // uploaded images are served by the API
+
     },
   },
   test: {
     environment: 'jsdom',
+    // Each worker runs its own jsdom; capping them avoids out-of-memory crashes on smaller machines.
+    maxWorkers: 4,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
   },

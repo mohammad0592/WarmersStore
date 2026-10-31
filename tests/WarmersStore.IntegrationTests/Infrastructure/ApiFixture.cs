@@ -33,6 +33,9 @@ public sealed class ApiFixture : IAsyncLifetime
     public const string AdminEmail = "admin@test.local";
     public static readonly string AdminPassword = $"test-{Guid.NewGuid():N}";
 
+    /// <summary>Uploaded images for this test run; deleted when the fixture is disposed.</summary>
+    public string MediaRoot { get; } = Path.Combine(Path.GetTempPath(), $"warmers-media-{Guid.NewGuid():N}");
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
     private WebApplicationFactory<Program> _factory = null!;
 
@@ -56,6 +59,7 @@ public sealed class ApiFixture : IAsyncLifetime
             builder.UseSetting("RateLimiting:SubmitPerMinute", "100000");
             builder.UseSetting("RateLimiting:LoginPerMinute", "100000");
             builder.UseSetting("Orders:CleanupEnabled", "false");
+            builder.UseSetting("Media:Root", MediaRoot);
             builder.UseSetting("Admin:Email", AdminEmail);
             builder.UseSetting("Admin:Password", AdminPassword);
         });
@@ -71,6 +75,10 @@ public sealed class ApiFixture : IAsyncLifetime
         }
         await _factory.DisposeAsync();
         await _postgres.DisposeAsync();
+        if (Directory.Exists(MediaRoot))
+        {
+            Directory.Delete(MediaRoot, recursive: true);
+        }
     }
 
     private readonly List<WebApplicationFactory<Program>> _derivedFactories = [];

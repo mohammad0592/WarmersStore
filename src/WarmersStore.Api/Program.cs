@@ -6,7 +6,10 @@ using Serilog.Formatting.Compact;
 using WarmersStore.Api.Common.Hosting;
 using WarmersStore.Api.Features;
 using WarmersStore.Api.Features.Admin;
+using WarmersStore.Api.Features.Catalog;
 using WarmersStore.Api.Features.Health;
+using WarmersStore.Api.Features.Media;
+using WarmersStore.Api.Features.Packages;
 using WarmersStore.Api.Features.Orders;
 using WarmersStore.Api.Infrastructure.Persistence;
 
@@ -47,6 +50,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddAppRateLimiting(builder.Configuration);
 builder.Services.AddAdminAuthentication(builder.Environment);
+builder.Services.AddMedia(builder.Configuration, builder.Environment);
 
 builder.Services.Configure<OrderRetentionOptions>(builder.Configuration.GetSection(OrderRetentionOptions.SectionName));
 if (builder.Configuration.GetValue($"{OrderRetentionOptions.SectionName}:CleanupEnabled", true))
@@ -68,11 +72,15 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 // Bad requests (e.g. malformed JSON) keep their 4xx status; Development rethrows them by default.
+// A request the browser abandoned (navigating away) is 499 "client closed request", not a server error.
 app.UseExceptionHandler(new ExceptionHandlerOptions
 {
-    StatusCodeSelector = ex => ex is BadHttpRequestException badRequest
-        ? badRequest.StatusCode
-        : StatusCodes.Status500InternalServerError,
+    StatusCodeSelector = ex => ex switch
+    {
+        BadHttpRequestException badRequest => badRequest.StatusCode,
+        OperationCanceledException => 499,
+        _ => StatusCodes.Status500InternalServerError,
+    },
 });
 app.UseStatusCodePages();
 
@@ -85,12 +93,14 @@ app.UseSecurityHeaders();
 app.UseSerilogRequestLogging(options =>
 {
     options.GetLevel = (context, _, ex) =>
-        ex is not null || context.Response.StatusCode >= 500 ? Serilog.Events.LogEventLevel.Error
+        context.RequestAborted.IsCancellationRequested || ex is OperationCanceledException ? Serilog.Events.LogEventLevel.Information
+        : ex is not null || context.Response.StatusCode >= 500 ? Serilog.Events.LogEventLevel.Error
         : context.Request.Path.StartsWithSegments("/health") ? Serilog.Events.LogEventLevel.Verbose
         : Serilog.Events.LogEventLevel.Information;
 });
 
 app.UseSpaStaticFiles();
+app.UseMedia();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -102,7 +112,9 @@ if (app.Environment.IsDevelopment())
 
 app.MapAppHealthChecks();
 app.MapPublicApi();
-app.MapAdminApi();
+app.MapAdminApi()
+    .MapAdminProductEndpoints()
+    .MapAdminPackageEndpoints();
 app.MapSpaFallback();
 
 await app.InitializeDatabaseAsync();

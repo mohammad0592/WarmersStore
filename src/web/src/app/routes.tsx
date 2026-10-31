@@ -1,5 +1,5 @@
 import type { RouteObject } from 'react-router'
-import { ProductDetailsPage } from '@/features/catalog/ProductDetailsPage'
+import { ProductDetailsDialog } from '@/features/catalog/ProductDetailsDialog'
 import { ProductsPage } from '@/features/catalog/ProductsPage'
 import { CheckoutPage } from '@/features/checkout/CheckoutPage'
 import { CheckoutSentPage } from '@/features/checkout/CheckoutSentPage'
@@ -19,8 +19,8 @@ export const routes: RouteObject[] = [
     element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'products', element: <ProductsPage /> },
-      { path: 'products/:slug', element: <ProductDetailsPage /> },
+      // Details open as a dialog over the catalog, so a product link still lands on the list.
+      { path: 'products', element: <ProductsPage />, children: [{ path: ':slug', element: <ProductDetailsDialog /> }] },
       { path: 'packages', element: <PackagesPage /> },
       { path: 'distributors', element: <DistributorsPage /> },
       { path: 'checkout', element: <CheckoutPage /> },

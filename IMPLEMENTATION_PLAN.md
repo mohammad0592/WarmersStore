@@ -187,7 +187,7 @@ Each milestone is small, testable and demoable.
 | M6 ✅ | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
 | M7 ✅ | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
 | M8 ✅ | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
-| M9 | Admin products (with images) and packages | |
+| M9 ✅ | Admin products (with images) and packages | |
 | **M10** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
 | M11 | Admin custom rules, delivery, store settings (**incl. `ShowDistributors` and "وين بتلاقينا؟" text**), orders list | |
 | M12 | Hardening, Railway deploy, production checklist, README | Smoke test on the live deployment |
@@ -293,3 +293,19 @@ Decisions taken while building that refine the plan above:
   - A 401 from any admin call re-checks `/me`, which sends the user to `/admin/login?next=…` (`next` is restricted to `/admin` paths).
   - The dashboard shows counts plus a launch checklist (WhatsApp number, prices, active products and packages, distributors visibility). The sidebar gains sections as M9–M11 add them.
 - **M8, bundle size:** the main storefront bundle is ~188 KB gzipped. Lazy-loading checkout (form libraries) is a candidate for M12.
+- **M9, admin catalog:**
+  - Products: CRUD, reorder, and up to 10 images each (upload with alt text, reorder, delete). The first image is the main one.
+  - Packages: CRUD with item rows, a single image, reorder, and soft delete. A deleted package's slug can be reused.
+  - Edits use optimistic concurrency (`xmin` version → 409 with a "reload" option). Validation messages are Arabic and keyed per field, with `items[i].x` mapped onto form rows.
+  - A product can't be activated without a price. One that's in a package can't be deleted (409 naming the packages); deactivate it instead.
+  - `PiecesPerSellingUnit` is derived from the selling unit (piece = 1, bag = pieces per bag), so bags are never split.
+- **M9, images:**
+  - **SkiaSharp** (MIT) instead of ImageSharp: v4 needs a license key for Release builds, and 3.1.x has unpatched high-severity advisories.
+  - Uploads are validated by content, limited in size and pixel count, oriented from EXIF (all 8 orientations unit-tested), resized to ≤1600 px, re-encoded to WebP without metadata, and stored under random keys behind `IImageStorage` (local disk now, S3/R2 later).
+  - Served from `/media` with an immutable cache. Old files are deleted on replace or delete.
+  - Docker uses `/data/media`, owned by the app user, with a compose `media` volume. On Railway, attach a Volume and possibly set `RAILWAY_RUN_UID=0` (M12).
+- **M9, product details:** changed from a page to the design's modal at `/products/:slug`, nested over the catalog. It's shareable, closes with Back or Escape, and is a bottom sheet on phones.
+- **M9, dev and ops fixes:**
+  - Vite now proxies `/media`. Requests the browser abandons are logged as 499 at info level, not as 500 errors.
+  - Vitest is capped at 4 workers (out-of-memory crashes on low RAM).
+  - Compose builds one image shared by `migrate` and `app`, and publishes on 8088.
