@@ -1,9 +1,12 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Formatting.Compact;
 using WarmersStore.Api.Common.Hosting;
+using WarmersStore.Api.Features;
 using WarmersStore.Api.Features.Health;
+using WarmersStore.Api.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +34,13 @@ builder.Services.AddSerilog((services, logger) =>
 
 // Resolved eagerly so a missing database configuration fails at startup, not on first request.
 var connectionString = DatabaseConnection.Resolve(builder.Configuration);
-builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddDbContext<AppDbContext>(options => options
+    .UseNpgsql(connectionString)
+    .UseSnakeCaseNamingConvention());
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddProblemDetails();
 builder.Services.AddAppHealthChecks();
@@ -73,6 +82,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapAppHealthChecks();
+app.MapPublicApi();
 app.MapSpaFallback();
 
-app.Run();
+await app.InitializeDatabaseAsync();
+await app.RunAsync();

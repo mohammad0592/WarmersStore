@@ -8,7 +8,7 @@
 
 - **Same origin:** no CORS, and the admin uses HttpOnly/Secure/SameSite=Strict cookies.
 - **Modular monolith:** one API project with vertical feature folders. Each feature owns its endpoints, DTOs, validation and EF configuration.
-- **Migrations:** an EF migration bundle runs as Railway's pre-deploy command.
+- **Migrations:** the image ships an EF migration bundle (`efbundle`), run as Railway's pre-deploy command (and by the compose `migrate` service locally). Development migrates at startup.
 - **First admin:** created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars only if no admin exists.
 - **Images:** stored through an `IImageStorage` abstraction, backed by a Railway Volume in v1 and swappable for S3/R2 later.
 - **Cross-cutting:** ProblemDetails errors, Serilog, built-in rate limiter, security headers, OpenAPI in development only.
@@ -50,9 +50,9 @@ Product
   SellingUnit (Piece | RetailBag), PiecesPerSellingUnit int
   UnitPrice numeric(10,2)?           -- per selling unit; required to activate
   IsActive, IsCustomEligible, DisplayOrder, CreatedAt, UpdatedAt, xmin (concurrency)
-ProductImage        Id, ProductId → Product (cascade), StorageKey, Alt, SortOrder, IsPrimary
+ProductImage        Id, ProductId → Product (cascade), StorageKey, AltText?, SortOrder (first = primary)
 
-ReadyMadePackage    Id, Slug, Name, Description, ImageKey?, Price, IsActive, IsFeatured,
+ReadyMadePackage (table "packages")  Id, Slug, Name, Description, ImageKey?, Price, IsActive, IsFeatured,
                     DisplayOrder, DeletedAt? (soft delete), CreatedAt, UpdatedAt
 PackageItem         PK(PackageId, ProductId), Quantity > 0; FK Product = Restrict
 
@@ -65,7 +65,8 @@ DeliverySettings (single row)  Mode (None | Flat | PerArea), FlatFee?, FreeThres
 
 StoreSettings (single row)
   StoreName, LogoKey?, WhatsAppNumber (E.164), Phone?, Email?, Address?
-  SocialLinks jsonb, HomepageContent jsonb (incl. "وين بتلاقينا؟" text)
+  FacebookUrl?, InstagramUrl?, TikTokUrl?
+  HomepageContent jsonb (incl. "وين بتلاقينا؟" text)          -- added in M11 once its shape is known
   Announcement?, AnnouncementActive, MinOrderTotal?
   ShowDistributors bool (default false)                         -- NEW
 
@@ -177,8 +178,8 @@ Each milestone is small, testable and demoable.
 
 | # | Milestone | Done when |
 |---|---|---|
-| M0 | Repo, solution, Vite app, compose Postgres, `/health`, SPA served by API, Dockerfile | `docker build` and run locally serve the SPA and `/health` |
-| M1 | Entities and migrations (**incl. City, Distributor**), development-only placeholder seed (distributors marked "(بيانات تجريبية)"), public GET APIs (**incl. `/api/cities`, `/api/distributors`**) | Integration tests: only active items returned; city filter works; inactive distributor → 404 |
+| M0 ✅ | Repo, solution, Vite app, compose Postgres, `/health`, SPA served by API, Dockerfile | `docker build` and run locally serve the SPA and `/health` |
+| M1 ✅ | Entities and migrations (**incl. City, Distributor**), development-only placeholder seed (distributors marked "(بيانات تجريبية)"), public GET APIs (**incl. `/api/cities`, `/api/distributors`**) | Integration tests: only active items returned; city filter works; inactive distributor → 404 |
 | M2 | Pricing engine, rule validator, quote and submit endpoints, WhatsApp message builder | Unit tests for every rule and for rounding; tampered-cart tests |
 | M3 | Design system ported from the Figma code: tokens, fonts, RTL, header/footer (**nav incl. موزعونا المعتمدون**), mobile menu, i18n | Visual check at 375/768/1280 px |
 | M4 | Home (**incl. "وين بتلاقينا؟" section**), products, product details, ready-made packages | Responsive checks; section hidden when `ShowDistributors` is false |
@@ -192,3 +193,14 @@ Each milestone is small, testable and demoable.
 | M12 | Hardening, Railway deploy, production checklist, README | Smoke test on the live deployment |
 
 M5 depends only on M1 and M3. It can be built in parallel with M6–M7 because it shares no code with the cart or checkout.
+
+## 6. Implementation notes
+
+Decisions taken while building that refine the plan above:
+
+- **M1, initial catalog:** the four products from the brief are seeded in every environment, **inactive and unpriced**. The admin adds prices and photos, then activates them. Their default selling unit is the factory retail bag, so bags are never split; this is changeable per product until the selling-unit decision is made.
+- **M1, no singleton rows in migrations:** the settings rows (store, delivery, custom-package) are inserted by the startup seeder when missing, not by migrations. Each table has a `CHECK (id = 1)`.
+- **M1, product visibility:** the public product list shows active products even without a price, because the catalog page doesn't show prices. `availableForCustom` is true only when the product is active, eligible and priced.
+- **M1, package availability:** a package that contains an inactive product is still listed, with `isAvailable: false`. `regularPrice` (the contents bought individually) is null when any content is unpriced.
+- **M1, cities:** `/api/cities` lists only cities a customer can pick, meaning active cities with at least one active distributor.
+- **M1, local Postgres:** compose publishes on host port 5433 to avoid clashing with a natively installed PostgreSQL.

@@ -5,7 +5,8 @@ obj/
 *.suo
 .vs/
 TestResults/
-src/WarmersStore.Api/wwwroot/
+src/WarmersStore.Api/wwwroot/*
+!src/WarmersStore.Api/wwwroot/.gitkeep
 
 # Node
 node_modules/

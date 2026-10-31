@@ -11,8 +11,9 @@ public class HostingTests(HostingTests.Factory factory) : IClassFixture<HostingT
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
-            // Creating the data source does not open a connection; liveness checks never touch it.
+            // No database here: liveness and routing must work without one.
             builder.UseSetting("ConnectionStrings:Default", "Host=unused.invalid;Database=unused");
+            builder.UseSetting("Database:SeedEssentialData", "false");
         }
     }
 

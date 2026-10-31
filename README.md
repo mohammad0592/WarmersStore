@@ -34,7 +34,7 @@ railway.json                   Railway build/deploy settings
 
 ## Local development
 
-1. Start PostgreSQL:
+1. Start PostgreSQL. It listens on host port **5433**, so it doesn't clash with a locally installed PostgreSQL on 5432:
 
    ```bash
    docker compose up -d db
@@ -47,6 +47,7 @@ railway.json                   Railway build/deploy settings
    ```
 
    `appsettings.Development.json` points at the compose database. Its password is a local-only development value.
+   In Development the API applies migrations at startup and seeds **sample data**: placeholder prices, packages, cities and distributors, all marked "(بيانات تجريبية)".
 
 3. Run the web app on http://localhost:5173. Vite proxies `/api` and `/health` to the API.
 
@@ -64,7 +65,49 @@ Useful URLs while the API runs in Development:
 - `GET /health/ready` — readiness (database reachable)
 - `GET /openapi/v1.json` — OpenAPI document (Development only)
 
+## Database and migrations
+
+EF Core with PostgreSQL, snake_case names. Migrations live in `src/WarmersStore.Api/Infrastructure/Persistence/Migrations`.
+
+Add a migration after changing the model (restore the local `dotnet-ef` tool once with `dotnet tool restore`):
+
+```bash
+dotnet ef migrations add <Name> --project src/WarmersStore.Api -o Infrastructure/Persistence/Migrations
+```
+
+How the schema gets applied:
+
+- **Development:** automatically at API startup.
+- **Production:** never at app startup. The Docker image contains `efbundle`, a standalone migration runner. Railway runs it as the pre-deploy command; locally the compose `migrate` service runs it.
+
+Seeding at startup:
+
+| Data | When | Notes |
+|---|---|---|
+| Settings rows and the 4 products from the brief | Every environment, only if missing | Products start **inactive and unpriced**; the admin prices and activates them |
+| Sample packages, cities, distributors, prices | Development only | Clearly marked placeholder data; never runs in Production |
+
+To reset your local database, delete the compose volume. This erases all local data:
+
+```bash
+docker compose down -v
+```
+
+## Public API
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/products`, `GET /api/products/{slug}` | Active products |
+| `GET /api/packages`, `GET /api/packages/{slug}` | Active, non-deleted ready-made packages with contents, `regularPrice`, `isAvailable` |
+| `GET /api/custom-package-rules` | Builder rules (`null` = not configured) |
+| `GET /api/delivery-options` | Delivery mode, fees, active areas (per-area mode only) |
+| `GET /api/store-settings` | Public store settings only |
+| `GET /api/cities` | Active cities that have active distributors, with counts |
+| `GET /api/distributors?cityId=`, `GET /api/distributors/{id}` | Active distributors in active cities, with a Google Maps link |
+
 ## Tests
+
+Integration tests start a throwaway PostgreSQL container (Testcontainers), so Docker must be running.
 
 ```bash
 dotnet test
@@ -98,6 +141,9 @@ All production configuration comes from environment variables; nothing secret is
 | `DATABASE_URL` | `postgres://` URL alternative, e.g. Railway's `${{Postgres.DATABASE_URL}}` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` in the image by default |
 | `PORT` | Set by Railway; the app listens on it when present (otherwise 8080 in the container) |
+| `Database__MigrateOnStartup` | `true` in Development; leave `false` in production (the pre-deploy step migrates) |
+| `Database__SeedEssentialData` | Default `true`: settings rows plus the inactive initial catalog, inserted only if missing |
+| `Database__SeedSampleData` | `true` in Development; ignored in Production |
 
 The app refuses to start if no database is configured.
 
@@ -105,6 +151,6 @@ The app refuses to start if no database is configured.
 
 Full deployment steps and the production checklist come in milestone M12. In short:
 
-1. Create a Railway project from this GitHub repo. `railway.json` selects the Dockerfile and the `/health` healthcheck.
+1. Create a Railway project from this GitHub repo. `railway.json` selects the Dockerfile, runs `./efbundle` (migrations) before each deploy, and uses the `/health` healthcheck.
 2. Add a PostgreSQL service, and set `DATABASE_URL=${{Postgres.DATABASE_URL}}` on the app service.
 3. Generate a Railway domain. TLS is terminated by Railway, and the app trusts `X-Forwarded-*` headers.

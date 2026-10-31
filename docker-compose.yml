@@ -1,6 +1,6 @@
 # Local development services.
-#   docker compose up -d db              -> PostgreSQL only (run API/web with dotnet/npm)
-#   docker compose --profile app up --build  -> also runs the production image on :8080
+#   docker compose up -d db                   -> PostgreSQL only (run API/web with dotnet/npm)
+#   docker compose --profile app up --build   -> also migrates and runs the production image on :8080
 services:
   db:
     image: postgres:17-alpine
@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: warmers
       POSTGRES_PASSWORD: warmers_dev # local development only
     ports:
-      - "5432:5432"
+      - "5433:5432" # 5433 on the host avoids clashing with a locally installed PostgreSQL
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,16 +18,26 @@ services:
       timeout: 3s
       retries: 10
 
-  app:
+  # Same step Railway runs as its pre-deploy command.
+  migrate:
     profiles: ["app"]
     build: .
-    environment:
+    entrypoint: ["./efbundle"]
+    environment: &app-env
       ConnectionStrings__Default: Host=db;Port=5432;Database=warmers;Username=warmers;Password=warmers_dev
-    ports:
-      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
+
+  app:
+    profiles: ["app"]
+    build: .
+    environment: *app-env
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
