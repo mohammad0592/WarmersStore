@@ -9,6 +9,9 @@ public sealed class RateLimitingOptions
 
     public int QuotePerMinute { get; set; } = 60;
     public int SubmitPerMinute { get; set; } = 10;
+
+    /// <summary>Admin sign-in attempts per IP; account lockout separately caps attempts per account.</summary>
+    public int LoginPerMinute { get; set; } = 10;
 }
 
 /// <summary>Per-client-IP limits for public endpoints that do work on every call.</summary>
@@ -16,6 +19,7 @@ public static class RateLimiting
 {
     public const string QuotePolicy = "checkout-quote";
     public const string SubmitPolicy = "checkout-submit";
+    public const string LoginPolicy = "admin-login";
 
     public static IServiceCollection AddAppRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -25,6 +29,7 @@ public static class RateLimiting
         {
             options.AddPolicy(QuotePolicy, context => PerIp(context, o => o.QuotePerMinute));
             options.AddPolicy(SubmitPolicy, context => PerIp(context, o => o.SubmitPerMinute));
+            options.AddPolicy(LoginPolicy, context => PerIp(context, o => o.LoginPerMinute));
 
             options.OnRejected = async (rejection, ct) =>
             {

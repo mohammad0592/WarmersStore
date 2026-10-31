@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using WarmersStore.Api.Common.Hosting;
 using WarmersStore.Api.Features;
+using WarmersStore.Api.Features.Admin;
 using WarmersStore.Api.Features.Health;
 using WarmersStore.Api.Features.Orders;
 using WarmersStore.Api.Infrastructure.Persistence;
@@ -45,6 +46,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddAppRateLimiting(builder.Configuration);
+builder.Services.AddAdminAuthentication(builder.Environment);
 
 builder.Services.Configure<OrderRetentionOptions>(builder.Configuration.GetSection(OrderRetentionOptions.SectionName));
 if (builder.Configuration.GetValue($"{OrderRetentionOptions.SectionName}:CleanupEnabled", true))
@@ -89,6 +91,8 @@ app.UseSerilogRequestLogging(options =>
 });
 
 app.UseSpaStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
@@ -98,6 +102,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapAppHealthChecks();
 app.MapPublicApi();
+app.MapAdminApi();
 app.MapSpaFallback();
 
 await app.InitializeDatabaseAsync();

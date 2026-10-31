@@ -1,10 +1,19 @@
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WarmersStore.Api.Domain;
 
 namespace WarmersStore.Api.Infrastructure.Persistence;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options, TimeProvider timeProvider) : DbContext(options)
+/// <summary>
+/// Store data plus ASP.NET Core Identity (admin accounts) and the data-protection keys that
+/// encrypt admin cookies. Keeping the keys in the database means sign-ins survive redeploys.
+/// </summary>
+public class AppDbContext(DbContextOptions<AppDbContext> options, TimeProvider timeProvider)
+    : IdentityDbContext<ApplicationUser>(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<ReadyMadePackage> Packages => Set<ReadyMadePackage>();
@@ -31,8 +40,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, TimeProvider t
         configurationBuilder.Properties<OrderItemKind>().HaveConversion<string>().HaveMaxLength(20);
     }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder); // Identity tables
+
+        // Identity names its tables explicitly ("AspNetUsers"); keep the schema consistently snake_case.
+        modelBuilder.Entity<ApplicationUser>().ToTable("asp_net_users");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRole>().ToTable("asp_net_roles");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<string>>().ToTable("asp_net_user_roles");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserClaim<string>>().ToTable("asp_net_user_claims");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserLogin<string>>().ToTable("asp_net_user_logins");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserToken<string>>().ToTable("asp_net_user_tokens");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>>().ToTable("asp_net_role_claims");
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

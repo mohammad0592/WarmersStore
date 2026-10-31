@@ -29,6 +29,10 @@ public sealed class ApiFixture : IAsyncLifetime
         Converters = { new JsonStringEnumConverter() },
     };
 
+    /// <summary>Test-only admin, created by the start-up seeder. The password is generated per run.</summary>
+    public const string AdminEmail = "admin@test.local";
+    public static readonly string AdminPassword = $"test-{Guid.NewGuid():N}";
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
     private WebApplicationFactory<Program> _factory = null!;
 
@@ -50,7 +54,10 @@ public sealed class ApiFixture : IAsyncLifetime
             // Tests share one client address; rate limits get their own test with low limits.
             builder.UseSetting("RateLimiting:QuotePerMinute", "100000");
             builder.UseSetting("RateLimiting:SubmitPerMinute", "100000");
+            builder.UseSetting("RateLimiting:LoginPerMinute", "100000");
             builder.UseSetting("Orders:CleanupEnabled", "false");
+            builder.UseSetting("Admin:Email", AdminEmail);
+            builder.UseSetting("Admin:Password", AdminPassword);
         });
 
         Client = _factory.CreateClient();
@@ -85,6 +92,21 @@ public sealed class ApiFixture : IAsyncLifetime
     public Task<HttpResponseMessage> PostJsonAsync<T>(string url, T body) =>
         Client.PostAsJsonAsync(url, body, Json);
 
+    /// <summary>A client with its own cookie jar (so sign-ins don't leak between tests).</summary>
+    public HttpClient NewClient() => _factory.CreateClient();
+
+    public IServiceProvider Services => _factory.Services;
+
+    /// <summary>A new client signed in as the seeded admin, sending the admin CSRF header.</summary>
+    public async Task<HttpClient> AdminClientAsync()
+    {
+        var client = NewClient();
+        client.DefaultRequestHeaders.Add("X-Dafa-Admin", "1");
+        var response = await client.PostAsJsonAsync("/api/admin/auth/login", new { email = AdminEmail, password = AdminPassword });
+        response.EnsureSuccessStatusCode();
+        return client;
+    }
+
     public Task<T> GetJsonAsync<T>(string url) =>
         Client.GetFromJsonAsync<T>(url, Json)!;
 
@@ -104,6 +126,8 @@ public sealed class ApiFixture : IAsyncLifetime
                      custom_package_settings, delivery_settings, store_settings
             RESTART IDENTITY CASCADE
             """);
+        // Identity tables are kept (the seeded admin), but lockouts from earlier tests are cleared.
+        await db.Database.ExecuteSqlRawAsync("UPDATE asp_net_users SET access_failed_count = 0, lockout_end = NULL");
         await EssentialDataSeeder.SeedAsync(db, NullLogger.Instance);
     });
 }

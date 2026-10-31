@@ -120,6 +120,31 @@ The cart sends only ids and quantities; prices sent by a client are ignored. Ope
 
 Submitting needs the store's WhatsApp number (`store_settings.whats_app_number`), which the admin sets in M11. Until then, `submit` returns `422 ordering_unavailable`.
 
+## Admin dashboard (`/admin`)
+
+ASP.NET Core Identity with an HttpOnly, SameSite=Strict session cookie. Accounts lock for 15 minutes after 5 failed sign-ins, and sign-in is rate-limited per IP. There is no public registration.
+
+**The first admin** is created at startup from configuration, only while no admin exists. Nothing is hard-coded. Passwords need at least 12 characters, and long passphrases are encouraged.
+
+- **Locally**, store the login in .NET user secrets, which live in your user profile and never in the repo:
+
+  ```bash
+  dotnet user-secrets set "Admin:Email" "you@example.com" --project src/WarmersStore.Api
+  ```
+
+  ```bash
+  dotnet user-secrets set "Admin:Password" "a-long-passphrase-of-your-own" --project src/WarmersStore.Api
+  ```
+
+  Restart the API, then sign in at http://localhost:5173/admin. `dotnet user-secrets list --project src/WarmersStore.Api` shows what's stored.
+- **In production**, set the Railway variables `Admin__Email` and `Admin__Password` for the first deploy. Once the account exists you can remove them; they're ignored after that.
+
+Security notes:
+
+- **Server-side checks:** every `/api/admin/*` endpoint except login requires the `Admin` role. An integration test fails the build if a new admin endpoint is ever mapped without it.
+- **Cross-site protection:** state-changing admin requests must send the `X-Dafa-Admin` header; together with SameSite cookies this blocks cross-site request forgery.
+- **Cookie keys:** the keys that encrypt the cookie are stored in PostgreSQL (`data_protection_keys`), so redeploys don't sign admins out.
+
 ## Tests
 
 Integration tests start a throwaway PostgreSQL container (Testcontainers), so Docker must be running.
@@ -161,6 +186,9 @@ All production configuration comes from environment variables; nothing secret is
 | `Database__SeedSampleData` | `true` in Development; ignored in Production |
 | `RateLimiting__QuotePerMinute` | Quote requests per client IP per minute (default 60) |
 | `RateLimiting__SubmitPerMinute` | Submit requests per client IP per minute (default 10) |
+| `RateLimiting__LoginPerMinute` | Admin sign-in attempts per client IP per minute (default 10) |
+| `Admin__Email`, `Admin__Password` | Create the first admin on startup if none exists; ignored afterwards |
+| `Orders__UnconfirmedRetentionDays` | Days before unconfirmed or cancelled orders are deleted (default 90) |
 
 The app refuses to start if no database is configured.
 

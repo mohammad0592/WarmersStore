@@ -186,7 +186,7 @@ Each milestone is small, testable and demoable.
 | **M5 ✅** | **`/distributors` page:** intro, in-store-only notice, city filter (URL-synced), cards, map CTA, both empty states, loading and error states | Vitest for filter/empty states; manual check of map links on Android/iOS; no cart/checkout imports (lint rule) |
 | M6 ✅ | Custom builder and cart (saved in browser, edit/duplicate/remove, live quote) | Vitest plus manual testing |
 | M7 ✅ | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
-| M8 | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
+| M8 ✅ | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
 | M9 | Admin products (with images) and packages | |
 | **M10** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
 | M11 | Admin custom rules, delivery, store settings (**incl. `ShowDistributors` and "وين بتلاقينا؟" text**), orders list | |
@@ -279,3 +279,17 @@ Decisions taken while building that refine the plan above:
   - In per-area mode a delivery area is required, and the summary re-quotes with it.
   - Server field errors (400) map onto the fields; business-rule failures (422) appear in the summary; the button is disabled until a store WhatsApp number is set.
 - **M7, after sending:** the cart is cleared, the reference and wa.me link are kept in `sessionStorage`, and the browser goes to `/checkout/sent` and then WhatsApp via `location.assign` (mobile browsers block `window.open` after a request). The sent page repeats that the order counts only once it's sent in WhatsApp, and can reopen WhatsApp. Only `https://wa.me/` links are accepted from storage.
+- **M8, admin authentication:**
+  - ASP.NET Core Identity (`AddIdentityCore` + role `Admin`). Identity tables are renamed to snake_case like the rest of the schema.
+  - The session cookie `dafa_admin` is HttpOnly, SameSite=Strict, Secure in production, lasts 8 hours with sliding renewal, and is a session cookie.
+  - Passwords need at least 12 characters and no composition rules (NIST SP 800-63B). Accounts lock for 15 minutes after 5 failures.
+  - Wrong password, unknown account, locked account and non-admin user all get the same 401, and unknown accounts still run a password hash so timing reveals nothing.
+  - Login is rate-limited per IP, and admin requests that change data must send `X-Dafa-Admin`.
+- **M8, guard test:** `EveryAdminEndpointExceptLogin_RequiresTheAdminPolicy` walks every route under `/api/admin` and fails if any lacks the policy, which protects M9–M11 endpoints as they're added.
+- **M8, first admin:** created at startup from `Admin:Email` / `Admin:Password` (user secrets locally, Railway variables in production) only while no admin exists. The password is never logged.
+- **M8, keys:** data-protection keys are persisted in PostgreSQL so cookies survive redeploys and could be shared by multiple instances.
+- **M8, admin frontend:**
+  - `/admin/*` is a lazy-loaded chunk (~10 KB) with its own layout and no storefront header, footer or cart; it's marked `noindex`.
+  - A 401 from any admin call re-checks `/me`, which sends the user to `/admin/login?next=…` (`next` is restricted to `/admin` paths).
+  - The dashboard shows counts plus a launch checklist (WhatsApp number, prices, active products and packages, distributors visibility). The sidebar gains sections as M9–M11 add them.
+- **M8, bundle size:** the main storefront bundle is ~188 KB gzipped. Lazy-loading checkout (form libraries) is a candidate for M12.

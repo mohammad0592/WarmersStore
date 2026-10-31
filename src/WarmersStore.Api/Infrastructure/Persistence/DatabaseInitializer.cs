@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WarmersStore.Api.Features.Admin;
 using WarmersStore.Api.Infrastructure.Persistence.Seeding;
 
 namespace WarmersStore.Api.Infrastructure.Persistence;
@@ -39,6 +40,7 @@ public static class DatabaseInitializer
         if (options.SeedEssentialData)
         {
             await EssentialDataSeeder.SeedAsync(db, logger);
+            await AdminSeeder.SeedAsync(scope.ServiceProvider, app.Configuration, logger);
         }
 
         if (options.SeedSampleData)
