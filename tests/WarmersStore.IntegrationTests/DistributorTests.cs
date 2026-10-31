@@ -68,7 +68,7 @@ public class DistributorTests(ApiFixture fixture) : ApiTestBase(fixture)
 
         var all = await Api.GetJsonAsync<List<DistributorDto>>("/api/distributors");
 
-        Assert.Equal("https://www.google.com/maps/search/?api=1&query=32.221500,35.254400",
+        Assert.Equal("https://www.google.com/maps/search/?api=1&query=32.2215,35.2544",
             all.Single(d => d.Name == "A1").MapUrl);
         Assert.Equal("https://maps.app.goo.gl/example", all.Single(d => d.Name == "A2").MapUrl);
         Assert.Null(all.Single(d => d.Name == "C1").MapUrl);

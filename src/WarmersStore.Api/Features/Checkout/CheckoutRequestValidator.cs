@@ -1,5 +1,5 @@
-using System.Text;
 using System.Text.RegularExpressions;
+using WarmersStore.Api.Common;
 
 namespace WarmersStore.Api.Features.Checkout;
 
@@ -171,46 +171,8 @@ public static partial class CheckoutRequestValidator
             : (new CustomerInfo(fullName, phone!, address, instructions, notes), errors);
     }
 
-    /// <summary>
-    /// Accepts what people actually type: spaces, dashes, brackets, a leading 00 and Arabic-Indic
-    /// digits. Returns E.164 (+ and 8-15 digits) or null.
-    /// </summary>
-    public static string? NormalizePhone(string? input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            return null;
-        }
-
-        var builder = new StringBuilder(input.Length);
-        foreach (var c in input.Trim())
-        {
-            if (c is >= '٠' and <= '٩')
-            {
-                builder.Append((char)('0' + (c - '٠')));
-            }
-            else if (c is >= '۰' and <= '۹')
-            {
-                builder.Append((char)('0' + (c - '۰')));
-            }
-            else if (char.IsAsciiDigit(c) || c == '+')
-            {
-                builder.Append(c);
-            }
-            else if (c is not (' ' or '-' or '(' or ')' or '.' or '‎' or '‏'))
-            {
-                return null;
-            }
-        }
-
-        var normalized = builder.ToString();
-        if (normalized.StartsWith("00", StringComparison.Ordinal))
-        {
-            normalized = "+" + normalized[2..];
-        }
-
-        return E164().IsMatch(normalized) ? normalized : null;
-    }
+    /// <summary>E.164 or null; see <see cref="PhoneNumbers.Normalize"/>.</summary>
+    public static string? NormalizePhone(string? input) => PhoneNumbers.Normalize(input);
 
     private static string SingleLine(string? value) =>
         Whitespace().Replace(StripControl(value ?? "", keepNewlines: false), " ").Trim();
@@ -232,9 +194,6 @@ public static partial class CheckoutRequestValidator
         string.Concat(value
             .Where(c => !char.IsControl(c) || char.IsWhiteSpace(c))
             .Select(c => c == '\n' && keepNewlines ? c : char.IsControl(c) ? ' ' : c));
-
-    [GeneratedRegex(@"^\+[1-9]\d{7,14}$")]
-    private static partial Regex E164();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();

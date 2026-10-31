@@ -188,7 +188,7 @@ Each milestone is small, testable and demoable.
 | M7 ✅ | Checkout form and WhatsApp hand-off (+ saved orders if approved) | Playwright end-to-end flow |
 | M8 ✅ | Admin login, roles, lockout, dashboard (**incl. active distributors count**) | Auth integration tests; anonymous → 401 on every admin route |
 | M9 ✅ | Admin products (with images) and packages | |
-| **M10** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
+| **M10 ✅** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
 | M11 | Admin custom rules, delivery, store settings (**incl. `ShowDistributors` and "وين بتلاقينا؟" text**), orders list | |
 | M12 | Hardening, Railway deploy, production checklist, README | Smoke test on the live deployment |
 
@@ -309,3 +309,20 @@ Decisions taken while building that refine the plan above:
   - Vite now proxies `/media`. Requests the browser abandons are logged as 499 at info level, not as 500 errors.
   - Vitest is capped at 4 workers (out-of-memory crashes on low RAM).
   - Compose builds one image shared by `migrate` and `app`, and publishes on 8088.
+- **M10, cities:**
+  - Add, rename, change the slug, activate or deactivate, and reorder, all on one admin page.
+  - Deleting a city that still has distributors returns 409 with a clear message (the database also restricts it).
+  - Cities stay separate from delivery areas.
+- **M10, distributors:**
+  - Admin list with city and status filters, a quick active/inactive toggle, and reordering within a selected city.
+  - The form covers name, city, address, phone, Google Maps link, coordinates, active status and one shop photo.
+  - Moving a shop to another city puts it at the end of that city's list. Edits use the `xmin` version, so a stale edit returns 409.
+  - Deleting is a hard delete that also removes the photo; nothing references distributors.
+- **M10, map links:**
+  - Only https Google Maps links are accepted: `google.{com,ps,co.il}/maps`, `maps.google.com`, `maps.app.goo.gl` and `goo.gl/maps`. That rejects http, `javascript:`, look-alike hosts, credentials in the URL and non-default ports (unit-tested). The server never fetches them.
+  - Coordinates come as a pair within range, with at most 6 decimals. The map link is built from them without trailing zeros.
+- **M10, activation needs a location (decision #2 applied):** a distributor can't be active without a map link or coordinates, because the page's main button depends on it. It can be saved inactive without one.
+- **M10, phone numbers:**
+  - Normalization moved to `Common/PhoneNumbers` and is shared by checkout and distributors, so distributors don't depend on the checkout code.
+  - A distributor number written locally with one leading 0 (`059…`, `09…`) is read as +970. International numbers are kept.
+- **M10, still pending:** the `ShowDistributors` switch (nav link and homepage section) is set in M11's store settings.

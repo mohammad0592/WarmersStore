@@ -11,6 +11,9 @@ import { PackagesListPage } from './catalog/PackagesListPage'
 import { ProductEditPage } from './catalog/ProductEditPage'
 import { ProductsListPage } from './catalog/ProductsListPage'
 import { DashboardPage } from './DashboardPage'
+import { CitiesPage } from './directory/CitiesPage'
+import { DistributorEditPage } from './directory/DistributorEditPage'
+import { DistributorsListPage } from './directory/DistributorsListPage'
 import { LoginPage } from './LoginPage'
 
 /**
@@ -54,6 +57,10 @@ export default function AdminApp() {
           <Route element={<PackagesListPage />} path="packages" />
           <Route element={<PackageEditPage />} path="packages/new" />
           <Route element={<PackageEditPage />} path="packages/:id" />
+          <Route element={<DistributorsListPage />} path="distributors" />
+          <Route element={<DistributorEditPage />} path="distributors/new" />
+          <Route element={<DistributorEditPage />} path="distributors/:id" />
+          <Route element={<CitiesPage />} path="cities" />
           <Route element={<AdminNotFound />} path="*" />
         </Route>
       </Routes>

@@ -65,6 +65,17 @@ public class CheckoutRequestValidatorTests
     public void Phone_InvalidIsRejected(string? input) =>
         Assert.Null(CheckoutRequestValidator.NormalizePhone(input));
 
+    [Theory]
+    [InlineData("059 912 3456", "+970599123456")]
+    [InlineData("09-234-5678", "+97092345678")]
+    [InlineData("٠٥٩٩١٢٣٤٥٦", "+970599123456")]
+    [InlineData("+972 52 123 4567", "+972521234567")] // international numbers are kept
+    [InlineData("0044 7700 900123", "+447700900123")]
+    [InlineData("599123456", null)]                    // no leading 0 and no country code
+    [InlineData("0", null)]
+    public void PhoneWithDefaultCountry_ReadsLocalNumbersAsPalestinian(string input, string? expected) =>
+        Assert.Equal(expected, WarmersStore.Api.Common.PhoneNumbers.NormalizeWithDefaultCountry(input, "+970"));
+
     [Fact]
     public void Customer_IsTrimmedAndNormalized()
     {

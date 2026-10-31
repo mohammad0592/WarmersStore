@@ -7,6 +7,7 @@ using WarmersStore.Api.Common.Hosting;
 using WarmersStore.Api.Features;
 using WarmersStore.Api.Features.Admin;
 using WarmersStore.Api.Features.Catalog;
+using WarmersStore.Api.Features.Distributors;
 using WarmersStore.Api.Features.Health;
 using WarmersStore.Api.Features.Media;
 using WarmersStore.Api.Features.Packages;
@@ -114,7 +115,9 @@ app.MapAppHealthChecks();
 app.MapPublicApi();
 app.MapAdminApi()
     .MapAdminProductEndpoints()
-    .MapAdminPackageEndpoints();
+    .MapAdminPackageEndpoints()
+    .MapAdminCityEndpoints()
+    .MapAdminDistributorEndpoints();
 app.MapSpaFallback();
 
 await app.InitializeDatabaseAsync();

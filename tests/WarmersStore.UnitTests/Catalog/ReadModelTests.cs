@@ -41,6 +41,25 @@ public class ReadModelTests
     public void MapLinks_FallBackToStoredUrl(string? url, string? expected) =>
         Assert.Equal(expected, MapLinks.Build(null, null, url));
 
+    [Theory]
+    [InlineData("https://maps.app.goo.gl/AbC123xyz", true)]
+    [InlineData("https://goo.gl/maps/AbC123", true)]
+    [InlineData("https://www.google.com/maps/place/Nablus/@32.22,35.25,15z", true)]
+    [InlineData("https://google.com/maps?q=32.22,35.25", true)]
+    [InlineData("https://maps.google.com/?q=32.22,35.25", true)]
+    [InlineData("https://www.google.ps/maps/place/x", true)]
+    [InlineData("http://maps.app.goo.gl/AbC123", false)]                 // not https
+    [InlineData("javascript:alert(1)", false)]
+    [InlineData("https://www.google.com/search?q=maps", false)]          // google, but not maps
+    [InlineData("https://goo.gl/AbC123", false)]                         // general shortener, not maps
+    [InlineData("https://maps.app.goo.gl.evil.example/x", false)]        // look-alike host
+    [InlineData("https://evil.example/www.google.com/maps", false)]
+    [InlineData("https://user:pass@www.google.com/maps", false)]         // credentials in the URL
+    [InlineData("https://www.google.com:8443/maps", false)]
+    [InlineData("not a url", false)]
+    public void GoogleMapsUrls_OnlyHttpsGoogleMapsHostsAreAllowed(string url, bool allowed) =>
+        Assert.Equal(allowed, MapLinks.IsAllowedGoogleMapsUrl(url));
+
     [Fact]
     public void RegularPrice_SumsUnitPriceTimesQuantity_OrNullWhenAnyUnpriced()
     {

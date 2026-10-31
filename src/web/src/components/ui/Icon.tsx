@@ -1,7 +1,7 @@
 import type { ReactNode, SVGProps } from 'react'
 
 // Ported from the Figma Make export (design/figma-export/src/components/icons.tsx),
-// plus "map-pin" and "phone" for the distributors directory.
+// plus "map-pin", "phone" and "edit".
 export type IconName =
   | 'bag'
   | 'cart'
@@ -9,6 +9,7 @@ export type IconName =
   | 'chevron'
   | 'clock'
   | 'close'
+  | 'edit'
   | 'flame'
   | 'heart'
   | 'info'
@@ -47,6 +48,7 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   close: <path d="m6 6 12 12M18 6 6 18" />,
+  edit: <path d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4" />,
   flame: (
     <path d="M13 2c1 5-3 6-1 10 1-2 3-3 4-5 3 3 4 7 2 11a7 7 0 0 1-12-1c-2-5 2-8 5-12 0 3 1 4 2 5 1-3 0-5 0-8Z" />
   ),
