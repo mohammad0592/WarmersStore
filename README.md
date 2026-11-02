@@ -161,6 +161,26 @@ npm --prefix src/web test
 npm --prefix src/web run lint
 ```
 
+## Load testing
+
+[tests/load/browse.js](tests/load/browse.js) finds how many visitors browsing at once the site can handle. It only sends GET requests, so it never creates orders or changes data. It doesn't test checkout, which is limited per IP address on purpose.
+
+Run it with Docker from the repository root, replacing the address with your site's:
+
+```bash
+cat tests/load/browse.js | docker run --rm -i -e BASE_URL=https://your-site.up.railway.app grafana/k6 run -
+```
+
+It takes about 11 minutes and steps through 10, 25, 50 and 100 visitors at once, holding each for 2 minutes. To change that, add for example `-e STEPS=50,100,200 -e HOLD_SECONDS=60` before `grafana/k6`. It stops early if more than 5% of requests fail.
+
+**Reading the results:** the summary has a line for each step. A step passes if 95% of requests finish within 1 second (`p(95)<1000`) and fewer than 1% fail (`rate<0.01`). The last step that passes is your capacity, and you should stay well below it. Watch CPU and memory in Railway's **Metrics** tab while it runs.
+
+**Limits of the test:**
+
+- **Your own connection:** the test downloads about 1 MB per simulated visitor, and at 100 visitors that's about 40 Mbit/s. If slow steps don't show high CPU in Railway, your internet connection may be the limit, not the site.
+- **Pessimistic visitors:** every simulated visitor is new, with nothing cached. Returning customers use much less.
+- **Cost:** a full run transfers roughly 1 GB, and Railway bills that usage. Run it before launch, not while customers are shopping.
+
 ## Production image (locally)
 
 Build and run the same image Railway will run, with the compose database:
