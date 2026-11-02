@@ -13,6 +13,7 @@ public class HostingTests(HostingTests.Factory factory) : IClassFixture<HostingT
             builder.UseEnvironment("Testing");
             // No database here: liveness and routing must work without one.
             builder.UseSetting("ConnectionStrings:Default", "Host=unused.invalid;Database=unused");
+            builder.UseSetting("Database:MigrateOnStartup", "false");
             builder.UseSetting("Database:SeedEssentialData", "false");
         }
     }
@@ -44,5 +45,23 @@ public class HostingTests(HostingTests.Factory factory) : IClassFixture<HostingT
 
         Assert.Equal("nosniff", response.Headers.GetValues("X-Content-Type-Options").Single());
         Assert.Equal("DENY", response.Headers.GetValues("X-Frame-Options").Single());
+
+        var csp = response.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("script-src 'self'", csp);
+        Assert.Contains("frame-ancestors 'none'", csp);
+        Assert.DoesNotContain("unsafe", csp);
+    }
+
+    [Theory]
+    [InlineData("br")]
+    [InlineData("gzip")]
+    public async Task Responses_AreCompressedWhenTheBrowserAccepts(string encoding)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/does-not-exist");
+        request.Headers.AcceptEncoding.ParseAdd(encoding);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(encoding, response.Content.Headers.ContentEncoding.Single());
     }
 }

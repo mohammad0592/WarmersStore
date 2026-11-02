@@ -77,8 +77,8 @@ dotnet ef migrations add <Name> --project src/WarmersStore.Api -o Infrastructure
 
 How the schema gets applied:
 
-- **Development:** automatically at API startup.
-- **Production:** never at app startup. The Docker image contains `efbundle`, a standalone migration runner. Railway runs it as the pre-deploy command; locally the compose `migrate` service runs it.
+- **Every environment:** automatically at app startup, before the app accepts requests. EF Core locks the database while migrating, so two instances can't migrate at once.
+- **If a migration fails:** the new deployment never passes its health check, so Railway keeps the previous one running. Fix the migration and deploy again.
 
 Seeding at startup:
 
@@ -169,7 +169,7 @@ Build and run the same image Railway will run, with the compose database:
 docker compose --profile app up --build
 ```
 
-Then open http://localhost:8088. Host port 8088 is used because 8080 is often taken, for example by an Oracle XE listener. Uploaded images go to the `media` compose volume.
+The app applies migrations when it starts. Then open http://localhost:8088. Host port 8088 is used because 8080 is often taken, for example by an Oracle XE listener. Uploaded images go to the `media` compose volume.
 
 ## Product and package images
 
@@ -197,7 +197,7 @@ All production configuration comes from environment variables; nothing secret is
 | `DATABASE_URL` | `postgres://` URL alternative, e.g. Railway's `${{Postgres.DATABASE_URL}}` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` in the image by default |
 | `PORT` | Set by Railway; the app listens on it when present (otherwise 8080 in the container) |
-| `Database__MigrateOnStartup` | `true` in Development; leave `false` in production (the pre-deploy step migrates) |
+| `Database__MigrateOnStartup` | `true` by default. Leave it unset |
 | `Database__SeedEssentialData` | Default `true`: settings rows plus the inactive initial catalog, inserted only if missing |
 | `Database__SeedSampleData` | `true` in Development; ignored in Production |
 | `RateLimiting__QuotePerMinute` | Quote requests per client IP per minute (default 60) |
@@ -212,8 +212,35 @@ The app refuses to start if no database is configured.
 
 ## Deployment (Railway)
 
-Full deployment steps and the production checklist come in milestone M12. In short:
+Railway builds the `Dockerfile` using the settings in `railway.json`, and redeploys on every push to `main`. TLS is terminated by Railway, and the app trusts its `X-Forwarded-*` headers.
 
-1. Create a Railway project from this GitHub repo. `railway.json` selects the Dockerfile, runs `./efbundle` (migrations) before each deploy, and uses the `/health` healthcheck.
-2. Add a PostgreSQL service, and set `DATABASE_URL=${{Postgres.DATABASE_URL}}` on the app service.
-3. Generate a Railway domain. TLS is terminated by Railway, and the app trusts `X-Forwarded-*` headers.
+1. Create a project from this GitHub repository and add a **PostgreSQL** database to it.
+2. On the app service, add these variables:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+   - `Admin__Email` and `Admin__Password` (at least 12 characters)
+3. Attach a **Volume** to the app service, mounted at `/data/media`.
+4. Under Networking, generate a domain with target port **8080**.
+5. Open `/admin`, sign in, and work through the checklist below.
+
+Don't add `ASPNETCORE_ENVIRONMENT` or `ConnectionStrings__Default` to Railway, even if it suggests them from `.env.example`. Those values are for local development.
+
+## Production checklist
+
+**Before taking real orders:**
+
+- [ ] `/health/ready` returns 200.
+- [ ] `RAILWAY_RUN_UID` and `Database__MigrateOnStartup` are not set. Neither is needed.
+- [ ] `Admin__Password` is long and unique, and isn't stored anywhere in Git.
+- [ ] The store's WhatsApp number is set under **إعدادات المتجر**. Ordering stays off until it is.
+- [ ] Products are priced, have images and are switched on.
+- [ ] Packages, custom-package rules, delivery and the minimum order are set.
+- [ ] The distributors switch matches what you want customers to see.
+- [ ] A test order goes all the way to WhatsApp, appears under **الطلبات**, and is then cancelled.
+- [ ] An uploaded image is still there after a redeploy.
+
+**Data that needs a backup:**
+
+- **Database:** orders, settings and the catalog. Check what backups your Railway plan includes, or take your own with `pg_dump` using the database's public URL.
+- **Volume:** the uploaded images in `/data/media`.
+
+**Cost:** Railway bills by usage. If the plan's credit runs out, the site stops, so keep an eye on usage before relying on it for real customers.

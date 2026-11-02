@@ -9,8 +9,8 @@ public sealed class DatabaseOptions
     public const string SectionName = "Database";
 
     /// <summary>
-    /// Apply pending migrations at startup. Enabled in Development for convenience;
-    /// production applies migrations as a separate pre-deploy step.
+    /// Apply pending migrations at startup, in every environment. If a migration fails the new
+    /// deployment never becomes healthy, so the host keeps the previous one running.
     /// </summary>
     public bool MigrateOnStartup { get; set; }
 

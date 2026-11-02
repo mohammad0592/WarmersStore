@@ -1,6 +1,6 @@
 # Local development services.
 #   docker compose up -d db                   -> PostgreSQL only (run API/web with dotnet/npm)
-#   docker compose --profile app up --build   -> also migrates and runs the production image on :8088
+#   docker compose --profile app up --build   -> also runs the production image on :8088
 services:
   db:
     image: postgres:17-alpine
@@ -18,29 +18,19 @@ services:
       timeout: 3s
       retries: 10
 
-  # Same step Railway runs as its pre-deploy command.
-  migrate:
-    profiles: ["app"]
-    image: warmersstore:local # built once by the app service
-    entrypoint: ["./efbundle"]
-    environment: &app-env
-      ConnectionStrings__Default: Host=db;Port=5432;Database=warmers;Username=warmers;Password=warmers_dev
-    depends_on:
-      db:
-        condition: service_healthy
-
   app:
     profiles: ["app"]
     build: .
     image: warmersstore:local
-    environment: *app-env
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=warmers;Username=warmers;Password=warmers_dev
     ports:
       - "8088:8080" # 8088 on the host: 8080 is often taken (e.g. Oracle XE listener)
     volumes:
       - media:/data/media
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:

@@ -8,7 +8,7 @@
 
 - **Same origin:** no CORS, and the admin uses HttpOnly/Secure/SameSite=Strict cookies.
 - **Modular monolith:** one API project with vertical feature folders. Each feature owns its endpoints, DTOs, validation and EF configuration.
-- **Migrations:** the image ships an EF migration bundle (`efbundle`), run as Railway's pre-deploy command (and by the compose `migrate` service locally). Development migrates at startup.
+- **Migrations:** applied by the app at startup, in every environment (changed in M12; it used to be a separate `efbundle` pre-deploy step).
 - **First admin:** created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars only if no admin exists.
 - **Images:** stored through an `IImageStorage` abstraction, backed by a Railway Volume in v1 and swappable for S3/R2 later.
 - **Cross-cutting:** ProblemDetails errors, Serilog, built-in rate limiter, security headers, OpenAPI in development only.
@@ -190,7 +190,7 @@ Each milestone is small, testable and demoable.
 | M9 ✅ | Admin products (with images) and packages | |
 | **M10 ✅** | **Admin إدارة الموزعين + cities:** list with city/status filters, create/edit form, Google Maps URL/coordinates validation, image upload, activate/deactivate, reorder, delete with confirmation; city CRUD | Integration tests: validation rejects non-Google/`http`/`javascript:` URLs, half-filled coordinates and bad images; city-in-use delete → 409; deactivated distributor disappears publicly |
 | **M11 ✅** | **Admin custom rules, delivery, store settings (incl. `ShowDistributors` and "وين بتلاقينا؟" text), orders list:** store settings + logo, custom-package limits/per-product rules/discount tiers, delivery mode + areas, orders list (status filter, search) with details and status changes | Integration tests: settings validation and WhatsApp normalization (ordering turns on once set), rules round-trip and public rules, PerArea needs an active area, Flat needs a fee, order search/details, only allowed status moves (409 otherwise) |
-| M12 | Hardening, Railway deploy, production checklist, README | Smoke test on the live deployment |
+| M12 | **Hardening, Railway deploy, production checklist, README:** Content-Security-Policy, response compression, 1 MB default request limit, startup migrations, low-memory runtime settings, lazy checkout, Arabic error page, robots.txt, deployment guide | Integration tests: CSP and compression. Production image checked locally. **Smoke test on the live deployment is still to run after the push** |
 
 M5 depends only on M1 and M3. It can be built in parallel with M6–M7 because it shares no code with the cart or checkout.
 
@@ -309,7 +309,7 @@ Decisions taken while building that refine the plan above:
 - **M9, dev and ops fixes:**
   - Vite now proxies `/media`. Requests the browser abandons are logged as 499 at info level, not as 500 errors.
   - Vitest is capped at 4 workers (out-of-memory crashes on low RAM).
-  - Compose builds one image shared by `migrate` and `app`, and publishes on 8088.
+  - Compose builds the production image and publishes it on 8088.
 - **M10, cities:**
   - Add, rename, change the slug, activate or deactivate, and reorder, all on one admin page.
   - Deleting a city that still has distributors returns 409 with a clear message (the database also restricts it).
@@ -339,6 +339,14 @@ Decisions taken while building that refine the plan above:
 - **M11, delivery:**
   - Mode `None` / `Flat` / `PerArea`. Flat requires a fee; PerArea requires at least one active area.
   - Areas have add, edit, reorder and delete. Deleting an area never changes past orders, because they keep a copy of its name.
+- **M12, migrations:** on Railway the pre-deploy `efbundle` step left the first deploy without tables, and its logs weren't available to find out why. The app now migrates at startup, which leaves one mechanism everywhere and needs no special variable. `efbundle` and the compose `migrate` service are gone. A failed migration fails the health check, so the previous deployment keeps running.
+- **M12, hardening:**
+  - The CSP allows only the site's own origin (plus `data:` images), with no `unsafe-*`. Checked in a browser against the production image: no violations.
+  - Railway doesn't compress responses, so the 635 KB main script was sent in full. The app now compresses text responses itself (Brotli or gzip, not images).
+  - Request bodies are limited to 1 MB by default. Image uploads keep their own 6 MB limit, confirmed with a 2.7 MB upload through Kestrel.
+  - Runtime: workstation GC, no concurrent GC, no tiered PGO. Under the same local load this used about 100 MB against 138 MB.
+  - Checkout is a separate bundle, so first-load JavaScript drops from ~188 KB to ~155 KB gzipped.
+  - Rate limits rely on the proxy's `X-Forwarded-For`, using the last address. This hasn't been checked from behind Railway's proxy.
 - **M11, orders:**
   - Newest first, 25 per page. Status filter and search (by reference, name, or 4+ phone digits) live in the URL.
   - The details page shows the items, totals, customer and the expected WhatsApp message, with a copy button and a link that opens the chat.

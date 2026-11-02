@@ -1,5 +1,7 @@
+using System.IO.Compression;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -24,6 +26,9 @@ if (Environment.GetEnvironmentVariable("PORT") is { Length: > 0 } port)
 {
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 }
+
+// Requests here are small JSON; image uploads raise this limit on their own endpoints.
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 1024 * 1024);
 
 builder.Services.AddSerilog((services, logger) =>
 {
@@ -50,6 +55,16 @@ builder.Services.AddDbContext<AppDbContext>(options => options
 
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// The hosting proxy passes responses through as they are, so the app compresses them itself.
+// Images aren't listed: WebP is already compressed.
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["text/javascript", "application/problem+json", "image/svg+xml"]);
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
+builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddAppRateLimiting(builder.Configuration);
@@ -94,6 +109,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseSecurityHeaders();
+app.UseResponseCompression();
 app.UseSerilogRequestLogging(options =>
 {
     options.GetLevel = (context, _, ex) =>
